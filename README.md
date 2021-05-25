@@ -2,11 +2,11 @@
 
 # Edge node:
 ## Implement blockchain (part of edge node)
-* Merkle Tree (https://github.com/vpaliy/merklelib)
+* Merkle Tree (https://github.com/vpaliy/merklelib) => Yinan
   * Insert txn
   * Get proof
 * Logs
-* Get txn from client
+* Get txn from client => Abhishek
   * Protobuf for txn
 * Serialize transactions in to batches
 * Write to blockchain
