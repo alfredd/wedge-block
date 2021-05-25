@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+service EdgeNode {
+    rpc Execute (Transaction) returns (Hash1);
+    rpc GetPhase2Hash (LogHash) returns (Hash2);
+}
+
+message Transaction {
+    RWSet rw = 1;
+}
+
+message RWSet {
+    TxnType type = 1;
+    string key = 2;
+    string val = 3;
+}
+
+enum TxnType {
+    RO = 0;
+    RW = 1;
+}
+
+message Hash1 {
+    int32 logIndex = 1;
+    RWSet rw = 2;
+    /**
+    Include Merkle tree path.
+    **/
+}
+
+message LogHash {
+    int32 logIndex =1;
+    bytes merkleRoot = 2;
+}
+
+message Hash2 {
+    bytes TxnHash = 1;
+}
