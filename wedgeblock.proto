@@ -1,4 +1,9 @@
 syntax = "proto3";
+package wedgeblock;
+/**
+Compile instruction:
+python -m grpc_tools.protoc -I./ --python_out=. --grpc_python_out=. wedgeblock.proto
+**/
 
 service EdgeNode {
     rpc Execute (Transaction) returns (Hash1);
@@ -35,4 +40,9 @@ message LogHash {
 
 message Hash2 {
     bytes TxnHash = 1;
+}
+
+message LogEntry {
+    int32 index = 1;
+
 }
