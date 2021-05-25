@@ -27,3 +27,11 @@
 * Send txn to Edge node. Get H1
 * Wait for H2
 * Verify H2 on Ethereum blockchain
+
+
+# Dependencies
+* Protobuf and gRPC
+  >  `pip install grpcio-tools`
+
+* merklelib
+  > `pip install merklelib`
