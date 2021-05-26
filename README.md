@@ -31,6 +31,8 @@
 
 # Dependencies
 * Protobuf and gRPC
+  >  `pip install grpcio`
+
   >  `pip install grpcio-tools`
 
 * merklelib
