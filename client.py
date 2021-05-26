@@ -1,13 +1,14 @@
 import logging
+import sys
 
 import grpc
 import wedgeblock_pb2
 import wedgeblock_pb2_grpc
 
 
-def edge_execute(stub):
-    rwset = wedgeblock_pb2.RWSet(type=wedgeblock_pb2.TxnType.RW, key="x", val="1")
-    txn = wedgeblock_pb2.Transaction(rw = rwset)
+def edge_execute(stub, key, val):
+    rwset = wedgeblock_pb2.RWSet(type=wedgeblock_pb2.TxnType.RW, key=key, val=val)
+    txn = wedgeblock_pb2.Transaction(rw=rwset)
     proof = stub.Execute(txn)
     print(proof)
 
@@ -19,7 +20,7 @@ def run():
     with grpc.insecure_channel('localhost:50051') as channel:
         stub = wedgeblock_pb2_grpc.EdgeNodeStub(channel)
         print("-------------- Execute --------------")
-        edge_execute(stub)
+        edge_execute(stub, sys.argv[1], sys.argv[2])
 
 
 if __name__ == '__main__':

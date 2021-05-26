@@ -36,9 +36,15 @@ class Log:
 class EdgeNode(wedgeblock_pb2_grpc.EdgeNodeServicer):
     def __init__(self):
         self.log = Log()
+        self.buffer = []
 
     def Execute(self, txn: wedgeblock_pb2.Transaction, unused_context) -> wedgeblock_pb2.Hash1:
-        tree = MerkleTree(str(txn), EdgeNode.hash_func)
+        self.buffer.append(str(txn))
+        print(self.buffer)
+        while len(self.buffer) < 2:
+            pass
+
+        tree = MerkleTree(self.buffer, EdgeNode.hash_func)
 
         proof = tree.get_proof(str(txn))
         proof_list = str(proof)[1:-1].split(", ")  # list of hashes (merkle path)
@@ -47,7 +53,7 @@ class EdgeNode(wedgeblock_pb2_grpc.EdgeNodeServicer):
         self.log.insert(LogEntry(self.log.get_log_entry(), tree))
         print(self.log)
 
-        hash1 = wedgeblock_pb2.Hash1(logIndex=0, rw = txn.rw)
+        hash1 = wedgeblock_pb2.Hash1(logIndex=self.log.get_log_entry()-1, rw = txn.rw)
         return hash1
 
     @staticmethod
