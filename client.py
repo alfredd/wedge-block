@@ -1,28 +1,22 @@
-import logging
-import sys
-
 import grpc
-import wedgeblock_pb2
-import wedgeblock_pb2_grpc
-
-
-def edge_execute(stub, key, val):
-    rwset = wedgeblock_pb2.RWSet(type=wedgeblock_pb2.TxnType.RW, key=key, val=val)
-    txn = wedgeblock_pb2.Transaction(rw=rwset)
-    proof = stub.Execute(txn)
-    print(proof)
+import wedgeblock_pb2_grpc as wbgrpc
+import wedgeblock_pb2 as wb
+import logging
 
 
 def run():
     # NOTE(gRPC Python Team): .close() is possible on a channel and should be
     # used in circumstances in which the with statement does not fit the needs
     # of the code.
+    print("Running client")
     with grpc.insecure_channel('localhost:50051') as channel:
-        stub = wedgeblock_pb2_grpc.EdgeNodeStub(channel)
-        print("-------------- Execute --------------")
-        edge_execute(stub, sys.argv[1], sys.argv[2])
+        stub = wbgrpc.EdgeNodeStub(channel)
+        t = wb.Transaction(rw=wb.RWSet(type=wb.TxnType.RW, key="k", val="v"))
+        print("Sending t: %s" %t)
+        hash1 = stub.Execute(t)
+        print("Received hash1: %s" %hash1)
 
-
+        hash2 = stub.GetPhase2Hash(wb.LogHash(logIndex=hash1.logIndex))
+        print("Received hash2: %s" %hash2)
 if __name__ == '__main__':
-    logging.basicConfig()
     run()
