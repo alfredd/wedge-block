@@ -3,14 +3,20 @@ from concurrent.futures.thread import ThreadPoolExecutor
 import wedgeblock_pb2_grpc as wbgrpc
 import wedgeblock_pb2 as wb
 import grpc
+import edge_node
 
 import logging
 
 
 class EdgeService(wbgrpc.EdgeNodeServicer):
-    def Execute(self, request, context):
+    def __init__(self):
+        self.edge_node = edge_node.EdgeNode()
+
+
+    def Execute(self, request: wb.Transaction, context):
+
         print("Request received: %s" %request)
-        h1 = wb.Hash1(logIndex=1)
+        h1 = self.edge_node.get_txn_from_client(request)
         return h1
 
     def GetPhase2Hash(self, request, context):

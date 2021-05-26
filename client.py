@@ -1,7 +1,7 @@
 import grpc
 import wedgeblock_pb2_grpc as wbgrpc
 import wedgeblock_pb2 as wb
-import logging
+import sys
 
 
 def run():
@@ -11,7 +11,7 @@ def run():
     print("Running client")
     with grpc.insecure_channel('localhost:50051') as channel:
         stub = wbgrpc.EdgeNodeStub(channel)
-        t = wb.Transaction(rw=wb.RWSet(type=wb.TxnType.RW, key="k", val="v"))
+        t = wb.Transaction(rw=wb.RWSet(type=wb.TxnType.RW, key=sys.argv[1], val=sys.argv[2]))
         print("Sending t: %s" %t)
         hash1 = stub.Execute(t)
         print("Received hash1: %s" %hash1)
