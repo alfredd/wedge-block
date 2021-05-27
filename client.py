@@ -23,7 +23,7 @@ def run():
         hash1 = stub.Execute(t)
 
         merkle_proof = pickle.loads(hash1.merkleProof) # deserialize
-        data = (hash1.rw.key, hash1.rw.val)
+        data = (t.rw.key, t.rw.val) # data to be verified
 
         if merklelib.verify_leaf_inclusion(data, merkle_proof, hashfunc, hash1.merkleRoot):
             print("hash1 is correct")
