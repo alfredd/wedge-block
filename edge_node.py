@@ -1,13 +1,10 @@
-import asyncio
-import logging
-
-import grpc
-
 import wedgeblock_pb2
 import wedgeblock_pb2_grpc
 
 from merklelib import MerkleTree
+import merklelib
 import hashlib
+import pickle
 
 
 class LogEntry:
@@ -43,17 +40,20 @@ class EdgeNode():
         # print(self.buffer)
         # while len(self.buffer) < 2:
         #     pass
+        data = (txn.rw.key, txn.rw.val)
+        data_list = [data]
 
-        tree = MerkleTree(str(txn), EdgeNode.hash_func)
+        tree = MerkleTree(data_list, EdgeNode.hash_func)   # txn.rw is unhashable without str()
+        root = tree.merkle_root
 
-        proof = tree.get_proof(str(txn))
-        proof_list = str(proof)[1:-1].split(", ")  # list of hashes (merkle path)
-        merkle_root_hash = proof_list[-1]
+        proof = tree.get_proof(data)
+        proof_pickle = pickle.dumps(proof)
 
         self.log.insert(LogEntry(self.log.get_log_entry(), tree))
         print(self.log)
 
-        hash1 = wedgeblock_pb2.Hash1(logIndex=self.log.get_log_entry()-1, rw = txn.rw)
+        hash1 = wedgeblock_pb2.Hash1(logIndex=self.log.get_log_entry()-1, rw=txn.rw,
+                                     merkleRoot=root, merkleProof=proof_pickle)
         return hash1
 
     @staticmethod
