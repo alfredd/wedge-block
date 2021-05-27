@@ -28,9 +28,8 @@ enum TxnType {
 message Hash1 {
     int32 logIndex = 1;
     RWSet rw = 2;
-    /**
-    Include Merkle tree path.
-    **/
+    string merkleRoot = 3;
+    bytes merkleProof = 4;
 }
 
 message LogHash {
