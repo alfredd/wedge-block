@@ -5,6 +5,7 @@ from merklelib import MerkleTree
 import merklelib
 import hashlib
 import pickle
+import threading
 
 
 class LogEntry:
@@ -20,10 +21,15 @@ class Log:
     def __init__(self):
         self.l = []
 
+    def get_log_entry(self, index):
+        if index < self.get_next_log_index() and index >= 0:
+            return self.l[index]
+        return None
+
     def insert(self, logentry:LogEntry):
         self.l.append(logentry)
 
-    def get_log_entry(self):
+    def get_next_log_index(self):
         return len(self.l)
 
     def __str__(self):
@@ -34,25 +40,38 @@ class EdgeNode():
     def __init__(self):
         self.log = Log()
         self.buffer = []
+        buffer_consumer_thread = threading.Thread(target=self.buffer_consumer, daemon=True)
+        buffer_consumer_thread.start()
+        self.log_added_event = threading.Event()
+
+    def buffer_consumer(self):
+        while True:
+            while len(self.buffer) < 4:
+                pass
+            tree = MerkleTree(self.buffer, EdgeNode.hash_func)
+            self.log.insert(LogEntry(self.log.get_next_log_index(), tree))
+            self.log_added_event.set()
+            self.buffer = []
+            print("current log is: \n", self.log)
+            self.log_added_event.clear()
 
     def get_txn_from_client(self, txn: wedgeblock_pb2.Transaction) -> wedgeblock_pb2.Hash1:
-        # self.buffer.append(str(txn))
-        # print(self.buffer)
-        # while len(self.buffer) < 2:
-        #     pass
         data = (txn.rw.key, txn.rw.val)
-        data_list = [data]
+        self.buffer.append(data)
+        print(self.buffer)
+        target_index = self.log.get_next_log_index()
 
-        tree = MerkleTree(data_list, EdgeNode.hash_func)   # txn.rw is unhashable without str()
+        self.log_added_event.wait()
+
+        log_index = self.log.get_log_entry(target_index).index
+        assert log_index == target_index
+        tree = self.log.get_log_entry(target_index).merkle_tree
         root = tree.merkle_root
-
         proof = tree.get_proof(data)
+        assert merklelib.verify_leaf_inclusion(data, proof, self.hash_func, root)
         proof_pickle = pickle.dumps(proof)
 
-        self.log.insert(LogEntry(self.log.get_log_entry(), tree))
-        print(self.log)
-
-        hash1 = wedgeblock_pb2.Hash1(logIndex=self.log.get_log_entry()-1, rw=txn.rw,
+        hash1 = wedgeblock_pb2.Hash1(logIndex=target_index, rw=txn.rw,
                                      merkleRoot=root, merkleProof=proof_pickle)
         return hash1
 
