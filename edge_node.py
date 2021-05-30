@@ -6,6 +6,7 @@ import merklelib
 import hashlib
 import pickle
 import threading
+import time
 
 
 class LogEntry:
@@ -40,28 +41,34 @@ class EdgeNode():
     def __init__(self):
         self.log = Log()
         self.buffer = []
-        buffer_consumer_thread = threading.Thread(target=self.buffer_consumer, daemon=True)
-        buffer_consumer_thread.start()
+
+        buffer_check_thread = threading.Thread(target=self.scheduled_buffer_check, daemon=True)
+        buffer_check_thread.start()
         self.log_added_event = threading.Event()
 
-    def buffer_consumer(self):
+    def scheduled_buffer_check(self):
         while True:
-            while len(self.buffer) < 4:
-                pass
-            tree = MerkleTree(self.buffer, EdgeNode.hash_func)
-            self.log.insert(LogEntry(self.log.get_next_log_index(), tree))
-            self.log_added_event.set()
-            self.buffer = []
-            print("current log is: \n", self.log)
-            self.log_added_event.clear()
+            time.sleep(10)
+            if len(self.buffer) > 0:
+                self.process_batch()
+
+    def process_batch(self):
+        tree = MerkleTree(self.buffer, self.hash_func)
+        self.log.insert(LogEntry(self.log.get_next_log_index(), tree))
+        self.log_added_event.set()
+        self.buffer = []
+        print("current log is: \n", self.log)
+        self.log_added_event.clear()
 
     def get_txn_from_client(self, txn: wedgeblock_pb2.Transaction) -> wedgeblock_pb2.Hash1:
         data = (txn.rw.key, txn.rw.val)
         self.buffer.append(data)
-        print(self.buffer)
         target_index = self.log.get_next_log_index()
 
-        self.log_added_event.wait()
+        if len(self.buffer) >= 4:
+            self.process_batch()
+        else:
+            self.log_added_event.wait()
 
         log_index = self.log.get_log_entry(target_index).index
         assert log_index == target_index
@@ -71,8 +78,8 @@ class EdgeNode():
         assert merklelib.verify_leaf_inclusion(data, proof, self.hash_func, root)
         proof_pickle = pickle.dumps(proof)
 
-        hash1 = wedgeblock_pb2.Hash1(logIndex=target_index, rw=txn.rw,
-                                     merkleRoot=root, merkleProof=proof_pickle)
+        hash1 = wedgeblock_pb2.Hash1(rw=txn.rw, merkleRoot=root, merkleProof=proof_pickle)
+        hash1.logIndex = target_index  # when logIndex is 0, this field will not be included in hash1. why????
         return hash1
 
     @staticmethod
