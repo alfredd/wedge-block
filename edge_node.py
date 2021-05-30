@@ -41,6 +41,7 @@ class EdgeNode():
     def __init__(self):
         self.log = Log()
         self.buffer = []
+        self.buffer_check_interval = 10 # seconds
 
         buffer_check_thread = threading.Thread(target=self.scheduled_buffer_check, daemon=True)
         buffer_check_thread.start()
@@ -48,7 +49,7 @@ class EdgeNode():
 
     def scheduled_buffer_check(self):
         while True:
-            time.sleep(10)
+            time.sleep(self.buffer_check_interval)
             if len(self.buffer) > 0:
                 self.process_batch()
 
