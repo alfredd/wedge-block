@@ -35,9 +35,11 @@ def run():
     with grpc.insecure_channel('localhost:50051') as channel:
         stub = wbgrpc.EdgeNodeStub(channel)
 
-        max_threads = 4
+        max_threads = 6
         all_threads = []
-        arg_list = [(stub,"x","1"),(stub,"y","2"),(stub,"z","3"),(stub,"a","0")]
+        arg_list = [(stub,"x","1"),(stub,"y","2"),(stub,"z","3"),(stub,"a","0"),(stub,"b","1"),(stub,"c","3")]
+
+        assert len(arg_list) == max_threads
 
         for i in range(max_threads):
             thread = threading.Thread(target=send_request, args=arg_list[i])
