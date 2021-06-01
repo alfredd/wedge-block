@@ -5,7 +5,7 @@ import json
 import binascii
 import time, datetime
 
-class RopEth():
+class DemoRopEth():
     def __init__(self):
         API_URL = "https://eth-ropsten.alchemyapi.io/v2/C6WMqDdkePbzxIARHzJ8mUB0lWhZp_nS"
         PRIVATE_KEY = "5244801e4622fa80bd1bb935c14702ee9f20c8435b8d4b22da33bd57a672b7f5"
@@ -110,7 +110,7 @@ def verify_txn_hash(result):
 if __name__ == '__main__':
     # txnHash = main()
     # time.sleep(120)
-    reth = RopEth()
+    reth = DemoRopEth()
     txnHash = b'15296a3e15f00557a929bed4852f6143ebe87632ec0e4c998998075b328b0182'
     t = binascii.unhexlify(txnHash)
     reciept = reth.getTransactionReciept(t)
