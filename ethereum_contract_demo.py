@@ -46,8 +46,12 @@ class RopEth():
         return v
 
     def getTransactionReciept(self, txnHash):
-        response = web3.eth.wait_for_transaction_receipt(web3=self.w3, txn_hash=txnHash, timeout=120, poll_latency=10)
-        print(response)
+        try:
+            response = web3.eth.wait_for_transaction_receipt(web3=self.w3, txn_hash=txnHash, timeout=60, poll_latency=10)
+            print(response)
+            return response
+        except:
+            return None
 
 def main():
     API_URL = "https://eth-ropsten.alchemyapi.io/v2/C6WMqDdkePbzxIARHzJ8mUB0lWhZp_nS"
@@ -96,8 +100,12 @@ def main():
         #     print(tx_receipt["transactionHash"])
         return result
 def verify_txn_hash(result):
-    response = web3.eth.wait_for_transaction_receipt(txn_hash=result, timeout=120, poll_latency=10)
-    print(response)
+    try:
+        response = web3.eth.wait_for_transaction_receipt(txn_hash=result, timeout=60, poll_latency=10)
+        print(response)
+        return response
+    except:
+        return None
 
 if __name__ == '__main__':
     # txnHash = main()
@@ -105,5 +113,7 @@ if __name__ == '__main__':
     reth = RopEth()
     txnHash = b'15296a3e15f00557a929bed4852f6143ebe87632ec0e4c998998075b328b0182'
     t = binascii.unhexlify(txnHash)
-    reth.getTransactionReciept(t)
+    reciept = reth.getTransactionReciept(t)
+    if reciept == None:
+        print("Txn with hash %s not found on the blockchain." %txnHash)
     print(reth.getLatestData())
