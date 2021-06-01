@@ -20,9 +20,9 @@ class RopEth():
     def updateContractData(self, data):
         # Executing a transaction.
         nonce = self.w3.eth.get_transaction_count(self.wallet_address)
-        message = "WedgeBlock Says Hi! @ %s" % datetime.datetime.now().strftime("%H:%M:%S")
+        message = data
         estimatedGas = self.contract.functions.update(message).estimateGas()
-        print(estimatedGas)
+        print("Estimated gas to execute the transaction: ",estimatedGas)
         print(dir(self.contract.functions.update(message)))
         txn_dict = self.contract.functions.update(message).buildTransaction({
             'gas': estimatedGas,
