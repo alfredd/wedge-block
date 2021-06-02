@@ -6,13 +6,10 @@ import merklelib
 import hashlib
 import pickle
 import threading
-import time
 
 from block_validator import BlockValidator
-from ropsten_connector import *
-import time, ast
+import time
 
-from ropsten_connector import RopEth
 
 class CallBackValidator():
     def call_back(self, txnHash, expected, actual):
@@ -42,7 +39,6 @@ def send_request(stub, key, val, bv:BlockValidator):
     print("Received hash1: %s" % hash1)
     time.sleep(10)
 
-    reth = RopEth()
     print("Checking Hash2 status")
     logHash = wb.LogHash(logIndex=hash1.logIndex, merkleRoot=hash1.merkleRoot.encode())
     hash2 = stub.GetPhase2Hash(logHash)
@@ -55,18 +51,7 @@ def send_request(stub, key, val, bv:BlockValidator):
         time.sleep(10)
     cb = CallBackValidator()
     bv.insert_to_verify(hash2.TxnHash, hash1.merkleRoot, hash1.logIndex,cb.call_back)
-    # message = reth.getInputMessageForTxn(hash2.TxnHash)
-    #
-    # print(message)
-    #
-    # # (merkleroot, logindex) = ast.literal_eval(message)
-    # # assert merkleroot == hash1.merkleRoot
-    # # assert logindex == hash1.logIndex
-    #
-    # # message = reth.getInputMessageForTxn(hash2.TxnHash)
-    # (merkleroot, logindex)= ast.literal_eval(message)
-    # assert merkleroot == hash1.merkleRoot
-    # assert logindex==hash1.logIndex
+
 
 def run():
     # NOTE(gRPC Python Team): .close() is possible on a channel and should be

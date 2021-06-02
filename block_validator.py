@@ -6,12 +6,10 @@ import ast
 class BlockValidator():
     def __init__(self):
         self.r = RopEth()
-        # self.l = []
         self.m = Lock()
         pass
 
     def insert_to_verify(self, txnHash, merkleRoot, logIndex, callback):
-        # self.l.append((txnHash, merkleRoot, logIndex, False, callback))
         self.m.acquire()
         self.verify(txnHash, merkleRoot, logIndex, callback)
         self.m.release()
