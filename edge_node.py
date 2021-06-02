@@ -64,6 +64,7 @@ class EdgeNode():
         buffer_check_thread = threading.Thread(target=self.scheduled_buffer_check, name="buffer_check_thread", daemon=True)
         buffer_check_thread.start()
         self.log_added_event = threading.Event()
+        self.analyser = EdgeNodeAnalyser()
 
     def scheduled_buffer_check(self):
         while True:
@@ -73,21 +74,32 @@ class EdgeNode():
 
     def wait_for_eth(self, txn_hash, data_to_eth):
         while True:
-            eth_response = self.eth_connector.getTransactionReciept(txn_hash) # binascii.unhexlify ??
+            eth_response = self.eth_connector.getTransactionReciept(txn_hash)
             if eth_response is not None:
-                log_entry = self.log.get_log_entry(data_to_eth[1])
+                log_index = data_to_eth[1]
+                log_entry = self.log.get_log_entry(log_index)
                 if log_entry:
                     assert txn_hash == eth_response['transactionHash']
                     log_entry.set_hash2(eth_response['transactionHash']) # third measurement
-                    print(log_entry)
+                    self.analyser.history[log_index].hash2_receive_timestamp = time.perf_counter()
+                    print("log entry phase2 complete: \n", log_entry)
+                    print("Time analysis: ", self.analyser.history[log_index].get_latency_analysis())
                 break
 
     def process_batch(self):
-        tree = MerkleTree(self.buffer, self.hash_func) # first measurement
-        next_open_index = self.log.get_next_log_index()
-        self.log.insert(LogEntry(next_open_index, tree)) # second measurement
-        data_to_eth = (tree.merkle_root, next_open_index)
+        time_record = EdgeNodeAnalyser.LogEntryTimeRecord()
+        time_record.batch_size = len(self.buffer)
 
+        time_record.batch_process_timestamp = time.perf_counter()  # first measurement
+        tree = MerkleTree(self.buffer, self.hash_func)
+
+        next_open_index = self.log.get_next_log_index()
+        self.log.insert(LogEntry(next_open_index, tree))
+        time_record.log_insertion_timestamp = time.perf_counter()   # second measurement
+
+        self.analyser.add_new_time_record(next_open_index, time_record)
+
+        data_to_eth = (tree.merkle_root, next_open_index)
         txn_hash = self.eth_connector.updateContractData(str(data_to_eth))
         threading.Thread(target=self.wait_for_eth, args=(txn_hash, data_to_eth), daemon=True).start()
 
@@ -132,3 +144,31 @@ class EdgeNode():
     @staticmethod
     def hash_func(value):
         return hashlib.sha256(value).hexdigest()
+
+
+class EdgeNodeAnalyser:
+    def __init__(self):
+        self.history = dict()
+
+    def add_new_time_record(self, log_index:int, record):
+        self.history[log_index] = record
+
+    class LogEntryTimeRecord:
+        def __init__(self):
+            self.batch_process_timestamp = None
+            self.log_insertion_timestamp = None
+            self.hash2_receive_timestamp = None
+            self.batch_size = 0
+
+        def get_latency_analysis(self):
+            return "{}, {}, {}, {}".format(self.batch_size,
+                                           self.log_insertion_timestamp - self.batch_process_timestamp,
+                                           self.hash2_receive_timestamp - self.log_insertion_timestamp,
+                                           self.hash2_receive_timestamp - self.batch_process_timestamp
+            )
+
+        def __str__(self):
+            return "{}, {}, {}".format(self.batch_process_timestamp,
+                                       self.log_insertion_timestamp,
+                                       self.hash2_receive_timestamp)
+
