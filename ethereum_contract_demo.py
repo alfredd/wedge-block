@@ -49,6 +49,12 @@ class DemoRopEth():
         try:
             response = web3.eth.wait_for_transaction_receipt(web3=self.w3, txn_hash=txnHash, timeout=60, poll_latency=10)
             print(response)
+            txn = self.w3.eth.get_transaction(txnHash)
+            print("Txn: ", txn.input)
+            decoded = self.w3.eth.contract(self.contract_address, abi=self.data["abi"]).decode_function_input(
+                txn.input)
+            message_ = decoded[1]["newMessage"]
+            print("data: ", message_)
             return response
         except:
             return None
@@ -107,13 +113,30 @@ def verify_txn_hash(result):
     except:
         return None
 
+def thrd(reth:DemoRopEth, data, counter):
+    print("Executing thread:", counter)
+    res = reth.updateContractData(data)
+    print("thread result: ", counter,", Txn hash: ", binascii.hexlify(res))
+
 if __name__ == '__main__':
     # txnHash = main()
     # time.sleep(120)
     reth = DemoRopEth()
-    txnHash = b'15296a3e15f00557a929bed4852f6143ebe87632ec0e4c998998075b328b0182'
+
+    # import threading
+    # teth=[]
+    # for i in range(1,5):
+    #     t = threading.Thread(target=thrd, args=(reth,datetime.datetime.now().strftime("%H:%M:%S"), i))
+    #     teth.append(t)
+    #     time.sleep(1)
+    # for thread in teth:
+    #     thread.start()
+    # for thread in teth:
+    #     thread.join()
+    txnHash = b'9f953eac9a716e1e5e90400195cb25f606cf0224a9bf947054cf4ce75a771a83'
     t = binascii.unhexlify(txnHash)
     reciept = reth.getTransactionReciept(t)
+    print("Txn receipt", reciept)
     if reciept == None:
         print("Txn with hash %s not found on the blockchain." %txnHash)
     print(reth.getLatestData())
