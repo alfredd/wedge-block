@@ -34,10 +34,6 @@ def send_request(stub, key, val):
 
     print("Received hash1: %s" % hash1)
     time.sleep(10)
-    reth = RopEth()
-    print("Checking Hash2 status")
-    logHash = wb.LogHash(logIndex=hash1.logIndex, merkleRoot=hash1.merkleRoot)
-    hash2 = stub.GetPhase2Hash(logHash)
 
     reth = RopEth()
     print("Checking Hash2 status")
