@@ -34,7 +34,7 @@ message Hash1 {
 
 message LogHash {
     int32 logIndex =1;
-    bytes merkleRoot = 2;
+    string merkleRoot = 2;
 }
 
 message Hash2 {

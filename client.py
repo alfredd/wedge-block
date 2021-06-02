@@ -8,6 +8,9 @@ import pickle
 import threading
 import time
 from ropsten_connector import *
+import time, ast
+
+from ropsten_connector import RopEth
 
 
 def hashfunc(value):
@@ -16,8 +19,10 @@ def hashfunc(value):
 
 def send_request(stub, key, val):
     t = wb.Transaction(rw=wb.RWSet(type=wb.TxnType.RW, key=key, val=val))
+    start = time.perf_counter()
     hash1 = stub.Execute(t)
-
+    stop = time.perf_counter()
+    print("Phase1, ", (stop-start))
     merkle_proof = pickle.loads(hash1.merkleProof)  # deserialize
     data = (t.rw.key, t.rw.val)  # data to be verified
 
@@ -25,8 +30,14 @@ def send_request(stub, key, val):
         print("hash1 is correct for ", data)
     else:
         print("something wrong")
+    print("Phase1 verification, ", (time.perf_counter()-stop))
 
     print("Received hash1: %s" % hash1)
+    time.sleep(10)
+    reth = RopEth()
+    print("Checking Hash2 status")
+    logHash = wb.LogHash(logIndex=hash1.logIndex, merkleRoot=hash1.merkleRoot)
+    hash2 = stub.GetPhase2Hash(logHash)
 
     reth = RopEth()
     print("Checking Hash2 status")
@@ -47,6 +58,10 @@ def send_request(stub, key, val):
     # assert merkleroot == hash1.merkleRoot
     # assert logindex == hash1.logIndex
 
+    # message = reth.getInputMessageForTxn(hash2.TxnHash)
+    (merkleroot, logindex)= ast.literal_eval(message)
+    assert merkleroot == hash1.merkleRoot
+    assert logindex==hash1.logIndex
 
 def run():
     # NOTE(gRPC Python Team): .close() is possible on a channel and should be
@@ -56,7 +71,7 @@ def run():
     with grpc.insecure_channel('localhost:50051') as channel:
         stub = wbgrpc.EdgeNodeStub(channel)
 
-        max_threads = 4
+        max_threads = 1
         all_threads = []
         arg_list = [(stub,"x","1"),(stub,"y","2"),(stub,"z","3"),(stub,"a","0"),(stub,"b","1"),(stub,"c","3")]
 
