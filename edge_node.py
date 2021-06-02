@@ -1,5 +1,4 @@
 import wedgeblock_pb2
-import wedgeblock_pb2_grpc
 
 from merklelib import MerkleTree
 import merklelib
@@ -7,15 +6,31 @@ import hashlib
 import pickle
 import threading
 import time
-
+from ropsten_connector import *
 
 class LogEntry:
     def __init__(self, index, merkle_tree:MerkleTree):
         self.index = index
         self.merkle_tree = merkle_tree
+        self.eth_hash2 = None
 
     def __str__(self):
-        return str(self.merkle_tree)
+        if self.eth_hash2 is None:
+            return str(self.index) + " " + str(self.merkle_tree)
+        else:
+            return str(self.index) + " " + str(self.merkle_tree) + " " + str(self.eth_hash2)
+
+    def set_hash2(self, hash2):
+        if self.eth_hash2 is None:
+            self.eth_hash2 = hash2
+
+    def has_hash2(self):
+        return self.eth_hash2 is not None
+
+    def get_hash2(self):
+        if self.has_hash2():
+            return self.eth_hash2
+        return None
 
 
 class Log:
@@ -34,7 +49,10 @@ class Log:
         return len(self.l)
 
     def __str__(self):
-        return ", ".join(map(str, self.l))
+        rtn = ""
+        for l in self.l:
+            rtn += str(l) + "\n"
+        return rtn
 
 
 class EdgeNode():
@@ -42,8 +60,8 @@ class EdgeNode():
         self.log = Log()
         self.buffer = []
         self.buffer_check_interval = 10 # seconds
-
-        buffer_check_thread = threading.Thread(target=self.scheduled_buffer_check, daemon=True)
+        self.eth_connector = RopEth()
+        buffer_check_thread = threading.Thread(target=self.scheduled_buffer_check, name="buffer_check_thread", daemon=True)
         buffer_check_thread.start()
         self.log_added_event = threading.Event()
 
@@ -53,11 +71,28 @@ class EdgeNode():
             if len(self.buffer) > 0:
                 self.process_batch()
 
+    def wait_for_eth(self, txn_hash, data_to_eth):
+        while True:
+            eth_response = self.eth_connector.getTransactionReciept(txn_hash) # binascii.unhexlify ??
+            if eth_response is not None:
+                log_entry = self.log.get_log_entry(data_to_eth[1])
+                if log_entry:
+                    assert txn_hash == eth_response['transactionHash']
+                    log_entry.set_hash2(eth_response['transactionHash']) # third measurement
+                    print(log_entry)
+                break
+
     def process_batch(self):
-        tree = MerkleTree(self.buffer, self.hash_func)
-        self.log.insert(LogEntry(self.log.get_next_log_index(), tree))
+        tree = MerkleTree(self.buffer, self.hash_func) # first measurement
+        next_open_index = self.log.get_next_log_index()
+        self.log.insert(LogEntry(next_open_index, tree)) # second measurement
+        data_to_eth = (tree.merkle_root, next_open_index)
+
+        txn_hash = self.eth_connector.updateContractData(str(data_to_eth))
+        threading.Thread(target=self.wait_for_eth, args=(txn_hash, data_to_eth), daemon=True).start()
+
         self.log_added_event.set()
-        self.buffer = []
+        self.buffer.clear()
         print("current log is: \n", self.log)
         self.log_added_event.clear()
 
@@ -71,6 +106,8 @@ class EdgeNode():
         else:
             self.log_added_event.wait()
 
+        # log entry is added to the log
+
         log_index = self.log.get_log_entry(target_index).index
         assert log_index == target_index
         tree = self.log.get_log_entry(target_index).merkle_tree
@@ -80,8 +117,17 @@ class EdgeNode():
         proof_pickle = pickle.dumps(proof)
 
         hash1 = wedgeblock_pb2.Hash1(rw=txn.rw, merkleRoot=root, merkleProof=proof_pickle)
-        hash1.logIndex = target_index  # when logIndex is 0, this field will not be included in hash1. why????
+        hash1.logIndex = target_index
         return hash1
+
+    def reply_h2_to_client(self, request: wedgeblock_pb2.LogHash):
+        request_index = request.logIndex
+        if self.log.get_log_entry(request_index).has_hash2():
+            return self.log.get_log_entry(request_index).get_hash2()
+        return None
+
+    def is_valid_index(self, request_index):
+        return self.log.get_log_entry(request_index) is not None
 
     @staticmethod
     def hash_func(value):

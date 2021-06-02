@@ -2,7 +2,7 @@ syntax = "proto3";
 package wedgeblock;
 /**
 Compile instruction:
-python -m grpc_tools.protoc -I./ --python_out=. --grpc_python_out=. wedgeblock.proto
+python3 -m grpc_tools.protoc -I./ --python_out=. --grpc_python_out=. wedgeblock.proto
 **/
 
 service EdgeNode {
@@ -39,9 +39,20 @@ message LogHash {
 
 message Hash2 {
     bytes TxnHash = 1;
+    Hash2Status status = 2;
+}
+
+enum Hash2Status {
+    INVALID = 0;
+    NOT_READY = 1;
+    VALID = 2;
 }
 
 message LogEntry {
     int32 index = 1;
+    bytes merkleTree = 2;
+}
 
+message LogIndex {
+    int32 index = 1;
 }

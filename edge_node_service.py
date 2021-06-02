@@ -12,7 +12,6 @@ class EdgeService(wbgrpc.EdgeNodeServicer):
     def __init__(self):
         self.edge_node = edge_node.EdgeNode()
 
-
     def Execute(self, request: wb.Transaction, context):
 
         print("Request received: %s" %request)
@@ -20,8 +19,13 @@ class EdgeService(wbgrpc.EdgeNodeServicer):
         return h1
 
     def GetPhase2Hash(self, request, context):
-        print("Received LogHash for phase2 response: %s" %request)
-        return wb.Hash2(TxnHash=bytes("hash2".encode('utf-8')))
+        if not self.edge_node.is_valid_index(request.logIndex):
+            return wb.Hash2(status=wb.Hash2Status.INVALID)
+        h2 = self.edge_node.reply_h2_to_client(request)
+        if h2 is not None:
+            return wb.Hash2(TxnHash=h2, status=wb.Hash2Status.VALID)
+        return wb.Hash2(status=wb.Hash2Status.NOT_READY)
+
 
 def serve():
     server = grpc.server(ThreadPoolExecutor(max_workers=10))

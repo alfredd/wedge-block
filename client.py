@@ -6,6 +6,8 @@ import merklelib
 import hashlib
 import pickle
 import threading
+import time
+from ropsten_connector import *
 
 
 def hashfunc(value):
@@ -26,6 +28,25 @@ def send_request(stub, key, val):
 
     print("Received hash1: %s" % hash1)
 
+    reth = RopEth()
+    print("Checking Hash2 status")
+    logHash = wb.LogHash(logIndex=hash1.logIndex, merkleRoot=hash1.merkleRoot.encode())
+    hash2 = stub.GetPhase2Hash(logHash)
+    if hash2.status is wb.Hash2Status.INVALID:
+        # raise Exception
+        print("logHash ", logHash, " is invalid")
+
+    while hash2.status is not wb.Hash2Status.VALID:
+        hash2 = stub.GetPhase2Hash(logHash)
+        time.sleep(10)
+    message = reth.getInputMessageForTxn(hash2.TxnHash)
+
+    print(message)
+
+    # (merkleroot, logindex) = ast.literal_eval(message)
+    # assert merkleroot == hash1.merkleRoot
+    # assert logindex == hash1.logIndex
+
 
 def run():
     # NOTE(gRPC Python Team): .close() is possible on a channel and should be
@@ -35,11 +56,11 @@ def run():
     with grpc.insecure_channel('localhost:50051') as channel:
         stub = wbgrpc.EdgeNodeStub(channel)
 
-        max_threads = 6
+        max_threads = 4
         all_threads = []
         arg_list = [(stub,"x","1"),(stub,"y","2"),(stub,"z","3"),(stub,"a","0"),(stub,"b","1"),(stub,"c","3")]
 
-        assert len(arg_list) == max_threads
+        # assert len(arg_list) == max_threads
 
         for i in range(max_threads):
             thread = threading.Thread(target=send_request, args=arg_list[i])
