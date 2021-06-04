@@ -53,7 +53,7 @@ class RopEth():
 
     def getInputMessageForTxn(self, txnHash):
         txn = self.w3.eth.get_transaction(txnHash)
-        print("Txn: ", txn.input)
+        # print("Txn: ", txn.input)
         decoded = self.w3.eth.contract(self.contract_address, abi=self.data["abi"]).decode_function_input(
             txn.input)
         message = decoded[1]["newMessage"]
