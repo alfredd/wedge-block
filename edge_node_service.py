@@ -13,8 +13,7 @@ class EdgeService(wbgrpc.EdgeNodeServicer):
         self.edge_node = edge_node.EdgeNode()
 
     def Execute(self, request: wb.Transaction, context):
-
-        print("Request received: %s" %request)
+        # print("Request received: %s" %request)
         h1 = self.edge_node.get_txn_from_client(request)
         return h1
 

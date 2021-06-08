@@ -14,7 +14,7 @@ class RopEth():
         self.w3 = Web3(HTTPProvider(API_URL))
         with open('contracts/HelloWorld.json') as f:
             self.data = json.load(f)
-            print("Contract ABI: ",self.data["abi"])
+            # print("Contract ABI: ",self.data["abi"])
             self.contract = self.w3.eth.contract(address=self.contract_address, abi=self.data["abi"])
 
     def updateContractData(self, data):
@@ -22,17 +22,17 @@ class RopEth():
         nonce = self.w3.eth.get_transaction_count(self.wallet_address)
         message = data
         estimatedGas = self.contract.functions.update(message).estimateGas()
-        print("Estimated gas to execute the transaction: ",estimatedGas)
-        print(dir(self.contract.functions.update(message)))
+        # print("Estimated gas to execute the transaction: ",estimatedGas)
+        # print(dir(self.contract.functions.update(message)))
         txn_dict = self.contract.functions.update(message).buildTransaction({
             'gas': estimatedGas,
             'from': self.wallet_address,
             'nonce': nonce,
         })
-        print(txn_dict)
-        print(dir(self.w3.eth.account))
+        # print(txn_dict)
+        # print(dir(self.w3.eth.account))
         signPromise = self.w3.eth.account.signTransaction(txn_dict, self.wallet_private_key)
-        print(dir(signPromise))
+        # print(dir(signPromise))
         result = self.w3.eth.send_raw_transaction(signPromise.rawTransaction)
         return result
 
@@ -46,7 +46,7 @@ class RopEth():
     def getTransactionReciept(self, txnHash):
         try:
             response = web3.eth.wait_for_transaction_receipt(web3=self.w3, txn_hash=txnHash, timeout=60, poll_latency=10)
-            print(response)
+            # print(response)
             return response
         except:
             return None
