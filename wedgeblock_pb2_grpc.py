@@ -17,7 +17,7 @@ class EdgeNodeStub(object):
         self.Execute = channel.unary_unary(
                 '/wedgeblock.EdgeNode/Execute',
                 request_serializer=wedgeblock__pb2.Transaction.SerializeToString,
-                response_deserializer=wedgeblock__pb2.Hash1.FromString,
+                response_deserializer=wedgeblock__pb2.Hash1Response.FromString,
                 )
         self.GetPhase2Hash = channel.unary_unary(
                 '/wedgeblock.EdgeNode/GetPhase2Hash',
@@ -47,7 +47,7 @@ def add_EdgeNodeServicer_to_server(servicer, server):
             'Execute': grpc.unary_unary_rpc_method_handler(
                     servicer.Execute,
                     request_deserializer=wedgeblock__pb2.Transaction.FromString,
-                    response_serializer=wedgeblock__pb2.Hash1.SerializeToString,
+                    response_serializer=wedgeblock__pb2.Hash1Response.SerializeToString,
             ),
             'GetPhase2Hash': grpc.unary_unary_rpc_method_handler(
                     servicer.GetPhase2Hash,
@@ -77,7 +77,7 @@ class EdgeNode(object):
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/wedgeblock.EdgeNode/Execute',
             wedgeblock__pb2.Transaction.SerializeToString,
-            wedgeblock__pb2.Hash1.FromString,
+            wedgeblock__pb2.Hash1Response.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 

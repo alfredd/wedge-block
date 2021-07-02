@@ -6,12 +6,13 @@ python3 -m grpc_tools.protoc -I./ --python_out=. --grpc_python_out=. wedgeblock.
 **/
 
 service EdgeNode {
-    rpc Execute (Transaction) returns (Hash1);
+    rpc Execute (Transaction) returns (Hash1Response);
     rpc GetPhase2Hash (LogHash) returns (Hash2);
 }
 
 message Transaction {
     RWSet rw = 1;
+    bytes signature = 2;
 }
 
 message RWSet {
@@ -30,6 +31,11 @@ message Hash1 {
     RWSet rw = 2;
     string merkleRoot = 3;
     bytes merkleProof = 4;
+}
+
+message Hash1Response {
+    Hash1 h1 = 1;
+    bytes signature = 2;
 }
 
 message LogHash {

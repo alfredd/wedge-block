@@ -7,15 +7,43 @@ import edge_node
 
 import logging
 
+import pickle
+from Crypto.Hash import SHA256
+from Crypto.PublicKey import ECC
+from Crypto.Signature import DSS
+
 
 class EdgeService(wbgrpc.EdgeNodeServicer):
     def __init__(self):
         self.edge_node = edge_node.EdgeNode()
 
+        self.trusted_public_key = ECC.import_key(open('publickey.der', 'rb').read())
+        self.verifier = DSS.new(self.trusted_public_key, 'fips-186-3')
+
+        private_key = ECC.import_key(open('privatekey.der', 'rb').read())
+        self.signer = DSS.new(private_key, 'fips-186-3')
+
     def Execute(self, request: wb.Transaction, context):
         # print("Request received: %s" %request)
+        received_content = pickle.dumps(request.rw)
+        signature = request.signature
+
+        received_content_hash = SHA256.new(received_content)
+        try:
+            self.verifier.verify(received_content_hash, signature)
+            print("The request is authentic.")
+        except ValueError:
+            print("The request is not authentic.")
+
         h1 = self.edge_node.get_txn_from_client(request)
-        return h1
+
+        response_content_bytes = pickle.dumps(h1)
+        response_content_hash = SHA256.new(response_content_bytes)
+        response_signature = self.signer.sign(response_content_hash)
+
+        response = wb.Hash1Response(h1 = h1, signature = response_signature)
+
+        return response
 
     def GetPhase2Hash(self, request, context):
         if not self.edge_node.is_valid_index(request.logIndex):

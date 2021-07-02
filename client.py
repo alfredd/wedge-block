@@ -10,6 +10,10 @@ import threading
 from block_validator import BlockValidator
 import time
 
+from Crypto.Hash import SHA256
+from Crypto.PublicKey import ECC
+from Crypto.Signature import DSS
+
 phase1_latency = 0
 phase2_latency = 0
 latency_update_lock = threading.Lock()
@@ -25,13 +29,31 @@ def hashfunc(value):
     return hashlib.sha256(value).hexdigest()
 
 
-def send_request(stub, key, val, bv:BlockValidator):
+def send_request(stub, key, val, signer, verifier, bv:BlockValidator):
     global phase1_latency
     global phase2_latency
     global latency_update_lock
-    t = wb.Transaction(rw=wb.RWSet(type=wb.TxnType.RW, key=key, val=val))
+    txn_content = wb.RWSet(type=wb.TxnType.RW, key=key, val=val)
+
+    txn_content_bytes = pickle.dumps(txn_content)
+    txn_content_hash = SHA256.new(txn_content_bytes)
+    txn_signature = signer.sign(txn_content_hash)
+
+    t = wb.Transaction(rw=txn_content,signature=txn_signature)
     start = time.perf_counter()
-    hash1 = stub.Execute(t)
+    hash1response = stub.Execute(t)
+    hash1 = hash1response.h1
+
+    received_response = pickle.dumps(hash1)
+    response_signature = hash1response.signature
+
+    received_response_hash = SHA256.new(received_response)
+    try:
+        verifier.verify(received_response_hash, response_signature)
+        print("The response is authentic.")
+    except ValueError:
+        print("The response is not authentic.")
+
     stop = time.perf_counter()
 
     latency_update_lock.acquire()
@@ -73,16 +95,22 @@ def run():
     block_validator = BlockValidator()
     precision = 4
 
+    private_key = ECC.import_key(open('privatekey.der','rb').read())
+    signer = DSS.new(private_key, 'fips-186-3')
+
+    trusted_public_key = ECC.import_key(open('publickey.der', 'rb').read())
+    verifier = DSS.new(trusted_public_key, 'fips-186-3')
+
     with grpc.insecure_channel('localhost:50051') as channel:
         stub = wbgrpc.EdgeNodeStub(channel)
 
-        max_threads = 10
+        max_threads = 1
         all_threads = []
         # arg_list = [(stub,"x","1"),(stub,"y","2"),(stub,"z","3"),(stub,"a","0"),(stub,"b","1"),(stub,"c","3")]
         # assert len(arg_list) == max_threads
 
         for i in range(max_threads):
-            thread = threading.Thread(target=send_request, args=(stub, str(i), str(i*i), block_validator))
+            thread = threading.Thread(target=send_request, args=(stub, str(i), str(i*i), signer, verifier, block_validator))
             all_threads.append(thread)
             thread.start()
 

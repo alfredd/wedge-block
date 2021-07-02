@@ -20,7 +20,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x10wedgeblock.proto\x12\nwedgeblock\",\n\x0bTransaction\x12\x1d\n\x02rw\x18\x01 \x01(\x0b\x32\x11.wedgeblock.RWSet\"D\n\x05RWSet\x12!\n\x04type\x18\x01 \x01(\x0e\x32\x13.wedgeblock.TxnType\x12\x0b\n\x03key\x18\x02 \x01(\t\x12\x0b\n\x03val\x18\x03 \x01(\t\"a\n\x05Hash1\x12\x10\n\x08logIndex\x18\x01 \x01(\x05\x12\x1d\n\x02rw\x18\x02 \x01(\x0b\x32\x11.wedgeblock.RWSet\x12\x12\n\nmerkleRoot\x18\x03 \x01(\t\x12\x13\n\x0bmerkleProof\x18\x04 \x01(\x0c\"/\n\x07LogHash\x12\x10\n\x08logIndex\x18\x01 \x01(\x05\x12\x12\n\nmerkleRoot\x18\x02 \x01(\t\"A\n\x05Hash2\x12\x0f\n\x07TxnHash\x18\x01 \x01(\x0c\x12\'\n\x06status\x18\x02 \x01(\x0e\x32\x17.wedgeblock.Hash2Status\"-\n\x08LogEntry\x12\r\n\x05index\x18\x01 \x01(\x05\x12\x12\n\nmerkleTree\x18\x02 \x01(\x0c\"\x19\n\x08LogIndex\x12\r\n\x05index\x18\x01 \x01(\x05*\x19\n\x07TxnType\x12\x06\n\x02RO\x10\x00\x12\x06\n\x02RW\x10\x01*4\n\x0bHash2Status\x12\x0b\n\x07INVALID\x10\x00\x12\r\n\tNOT_READY\x10\x01\x12\t\n\x05VALID\x10\x02\x32z\n\x08\x45\x64geNode\x12\x35\n\x07\x45xecute\x12\x17.wedgeblock.Transaction\x1a\x11.wedgeblock.Hash1\x12\x37\n\rGetPhase2Hash\x12\x13.wedgeblock.LogHash\x1a\x11.wedgeblock.Hash2b\x06proto3'
+  serialized_pb=b'\n\x10wedgeblock.proto\x12\nwedgeblock\"?\n\x0bTransaction\x12\x1d\n\x02rw\x18\x01 \x01(\x0b\x32\x11.wedgeblock.RWSet\x12\x11\n\tsignature\x18\x02 \x01(\x0c\"D\n\x05RWSet\x12!\n\x04type\x18\x01 \x01(\x0e\x32\x13.wedgeblock.TxnType\x12\x0b\n\x03key\x18\x02 \x01(\t\x12\x0b\n\x03val\x18\x03 \x01(\t\"a\n\x05Hash1\x12\x10\n\x08logIndex\x18\x01 \x01(\x05\x12\x1d\n\x02rw\x18\x02 \x01(\x0b\x32\x11.wedgeblock.RWSet\x12\x12\n\nmerkleRoot\x18\x03 \x01(\t\x12\x13\n\x0bmerkleProof\x18\x04 \x01(\x0c\"A\n\rHash1Response\x12\x1d\n\x02h1\x18\x01 \x01(\x0b\x32\x11.wedgeblock.Hash1\x12\x11\n\tsignature\x18\x02 \x01(\x0c\"/\n\x07LogHash\x12\x10\n\x08logIndex\x18\x01 \x01(\x05\x12\x12\n\nmerkleRoot\x18\x02 \x01(\t\"A\n\x05Hash2\x12\x0f\n\x07TxnHash\x18\x01 \x01(\x0c\x12\'\n\x06status\x18\x02 \x01(\x0e\x32\x17.wedgeblock.Hash2Status\"-\n\x08LogEntry\x12\r\n\x05index\x18\x01 \x01(\x05\x12\x12\n\nmerkleTree\x18\x02 \x01(\x0c\"\x19\n\x08LogIndex\x12\r\n\x05index\x18\x01 \x01(\x05*\x19\n\x07TxnType\x12\x06\n\x02RO\x10\x00\x12\x06\n\x02RW\x10\x01*4\n\x0bHash2Status\x12\x0b\n\x07INVALID\x10\x00\x12\r\n\tNOT_READY\x10\x01\x12\t\n\x05VALID\x10\x02\x32\x82\x01\n\x08\x45\x64geNode\x12=\n\x07\x45xecute\x12\x17.wedgeblock.Transaction\x1a\x19.wedgeblock.Hash1Response\x12\x37\n\rGetPhase2Hash\x12\x13.wedgeblock.LogHash\x1a\x11.wedgeblock.Hash2b\x06proto3'
 )
 
 _TXNTYPE = _descriptor.EnumDescriptor(
@@ -43,8 +43,8 @@ _TXNTYPE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=437,
-  serialized_end=462,
+  serialized_start=523,
+  serialized_end=548,
 )
 _sym_db.RegisterEnumDescriptor(_TXNTYPE)
 
@@ -74,8 +74,8 @@ _HASH2STATUS = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=464,
-  serialized_end=516,
+  serialized_start=550,
+  serialized_end=602,
 )
 _sym_db.RegisterEnumDescriptor(_HASH2STATUS)
 
@@ -103,6 +103,13 @@ _TRANSACTION = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='signature', full_name='wedgeblock.Transaction.signature', index=1,
+      number=2, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"",
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
   ],
   extensions=[
   ],
@@ -116,7 +123,7 @@ _TRANSACTION = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=32,
-  serialized_end=76,
+  serialized_end=95,
 )
 
 
@@ -161,8 +168,8 @@ _RWSET = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=78,
-  serialized_end=146,
+  serialized_start=97,
+  serialized_end=165,
 )
 
 
@@ -214,8 +221,47 @@ _HASH1 = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=148,
-  serialized_end=245,
+  serialized_start=167,
+  serialized_end=264,
+)
+
+
+_HASH1RESPONSE = _descriptor.Descriptor(
+  name='Hash1Response',
+  full_name='wedgeblock.Hash1Response',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='h1', full_name='wedgeblock.Hash1Response.h1', index=0,
+      number=1, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='signature', full_name='wedgeblock.Hash1Response.signature', index=1,
+      number=2, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"",
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=266,
+  serialized_end=331,
 )
 
 
@@ -253,8 +299,8 @@ _LOGHASH = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=247,
-  serialized_end=294,
+  serialized_start=333,
+  serialized_end=380,
 )
 
 
@@ -292,8 +338,8 @@ _HASH2 = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=296,
-  serialized_end=361,
+  serialized_start=382,
+  serialized_end=447,
 )
 
 
@@ -331,8 +377,8 @@ _LOGENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=363,
-  serialized_end=408,
+  serialized_start=449,
+  serialized_end=494,
 )
 
 
@@ -363,17 +409,19 @@ _LOGINDEX = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=410,
-  serialized_end=435,
+  serialized_start=496,
+  serialized_end=521,
 )
 
 _TRANSACTION.fields_by_name['rw'].message_type = _RWSET
 _RWSET.fields_by_name['type'].enum_type = _TXNTYPE
 _HASH1.fields_by_name['rw'].message_type = _RWSET
+_HASH1RESPONSE.fields_by_name['h1'].message_type = _HASH1
 _HASH2.fields_by_name['status'].enum_type = _HASH2STATUS
 DESCRIPTOR.message_types_by_name['Transaction'] = _TRANSACTION
 DESCRIPTOR.message_types_by_name['RWSet'] = _RWSET
 DESCRIPTOR.message_types_by_name['Hash1'] = _HASH1
+DESCRIPTOR.message_types_by_name['Hash1Response'] = _HASH1RESPONSE
 DESCRIPTOR.message_types_by_name['LogHash'] = _LOGHASH
 DESCRIPTOR.message_types_by_name['Hash2'] = _HASH2
 DESCRIPTOR.message_types_by_name['LogEntry'] = _LOGENTRY
@@ -402,6 +450,13 @@ Hash1 = _reflection.GeneratedProtocolMessageType('Hash1', (_message.Message,), {
   # @@protoc_insertion_point(class_scope:wedgeblock.Hash1)
   })
 _sym_db.RegisterMessage(Hash1)
+
+Hash1Response = _reflection.GeneratedProtocolMessageType('Hash1Response', (_message.Message,), {
+  'DESCRIPTOR' : _HASH1RESPONSE,
+  '__module__' : 'wedgeblock_pb2'
+  # @@protoc_insertion_point(class_scope:wedgeblock.Hash1Response)
+  })
+_sym_db.RegisterMessage(Hash1Response)
 
 LogHash = _reflection.GeneratedProtocolMessageType('LogHash', (_message.Message,), {
   'DESCRIPTOR' : _LOGHASH,
@@ -440,8 +495,8 @@ _EDGENODE = _descriptor.ServiceDescriptor(
   index=0,
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_start=518,
-  serialized_end=640,
+  serialized_start=605,
+  serialized_end=735,
   methods=[
   _descriptor.MethodDescriptor(
     name='Execute',
@@ -449,7 +504,7 @@ _EDGENODE = _descriptor.ServiceDescriptor(
     index=0,
     containing_service=None,
     input_type=_TRANSACTION,
-    output_type=_HASH1,
+    output_type=_HASH1RESPONSE,
     serialized_options=None,
     create_key=_descriptor._internal_create_key,
   ),

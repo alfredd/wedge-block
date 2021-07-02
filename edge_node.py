@@ -10,12 +10,13 @@ import time
 from ropsten_connector import *
 
 
+
 class EdgeNode:
     def __init__(self):
         self.log = Log()
         self.buffer = []
         self.buffer_check_interval = 10  # seconds
-        self.max_buffer_size = 10
+        self.max_buffer_size = 1
         self.buffer_lock = threading.Lock()
 
         self.eth_connector = RopEth()
