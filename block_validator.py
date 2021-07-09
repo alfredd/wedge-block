@@ -1,6 +1,5 @@
 from ropsten_connector import RopEth
 from threading import Lock
-import ast
 import pickle
 import codecs
 
@@ -25,3 +24,10 @@ class BlockValidator():
             logindex = expectedLogIndex
             merkleroot = blockchain_record[expectedLogIndex]
         callback(txnHash, (expectedMerkleRoot, expectedLogIndex), (merkleroot, logindex))
+
+
+class CallBackValidator():
+    def call_back(self, txnHash, expected, actual):
+        # print("checking callback for txnHash %s." %txnHash)
+        assert expected[0]==actual[0]
+        assert expected[1]==actual[1]

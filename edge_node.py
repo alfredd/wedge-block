@@ -16,7 +16,7 @@ class EdgeNode:
         self.log = Log()
         self.buffer = []
         self.buffer_check_interval = 10  # seconds
-        self.max_buffer_size = 1
+        self.max_buffer_size = 10
         self.buffer_lock = threading.Lock()
 
         self.eth_connector = RopEth()
