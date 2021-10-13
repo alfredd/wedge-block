@@ -20,7 +20,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x10wedgeblock.proto\x12\nwedgeblock\"?\n\x0bTransaction\x12\x1d\n\x02rw\x18\x01 \x01(\x0b\x32\x11.wedgeblock.RWSet\x12\x11\n\tsignature\x18\x02 \x01(\x0c\"D\n\x05RWSet\x12!\n\x04type\x18\x01 \x01(\x0e\x32\x13.wedgeblock.TxnType\x12\x0b\n\x03key\x18\x02 \x01(\t\x12\x0b\n\x03val\x18\x03 \x01(\t\"a\n\x05Hash1\x12\x10\n\x08logIndex\x18\x01 \x01(\x05\x12\x1d\n\x02rw\x18\x02 \x01(\x0b\x32\x11.wedgeblock.RWSet\x12\x12\n\nmerkleRoot\x18\x03 \x01(\t\x12\x13\n\x0bmerkleProof\x18\x04 \x01(\x0c\"A\n\rHash1Response\x12\x1d\n\x02h1\x18\x01 \x01(\x0b\x32\x11.wedgeblock.Hash1\x12\x11\n\tsignature\x18\x02 \x01(\x0c\"/\n\x07LogHash\x12\x10\n\x08logIndex\x18\x01 \x01(\x05\x12\x12\n\nmerkleRoot\x18\x02 \x01(\t\"A\n\x05Hash2\x12\x0f\n\x07TxnHash\x18\x01 \x01(\x0c\x12\'\n\x06status\x18\x02 \x01(\x0e\x32\x17.wedgeblock.Hash2Status\"-\n\x08LogEntry\x12\r\n\x05index\x18\x01 \x01(\x05\x12\x12\n\nmerkleTree\x18\x02 \x01(\x0c\"\x19\n\x08LogIndex\x12\r\n\x05index\x18\x01 \x01(\x05*\x19\n\x07TxnType\x12\x06\n\x02RO\x10\x00\x12\x06\n\x02RW\x10\x01*4\n\x0bHash2Status\x12\x0b\n\x07INVALID\x10\x00\x12\r\n\tNOT_READY\x10\x01\x12\t\n\x05VALID\x10\x02\x32\x82\x01\n\x08\x45\x64geNode\x12=\n\x07\x45xecute\x12\x17.wedgeblock.Transaction\x1a\x19.wedgeblock.Hash1Response\x12\x37\n\rGetPhase2Hash\x12\x13.wedgeblock.LogHash\x1a\x11.wedgeblock.Hash2b\x06proto3'
+  serialized_pb=b'\n\x10wedgeblock.proto\x12\nwedgeblock\"?\n\x0bTransaction\x12\x1d\n\x02rw\x18\x01 \x01(\x0b\x32\x11.wedgeblock.RWSet\x12\x11\n\tsignature\x18\x02 \x01(\x0c\"D\n\x05RWSet\x12!\n\x04type\x18\x01 \x01(\x0e\x32\x13.wedgeblock.TxnType\x12\x0b\n\x03key\x18\x02 \x01(\x0c\x12\x0b\n\x03val\x18\x03 \x01(\x0c\"a\n\x05Hash1\x12\x10\n\x08logIndex\x18\x01 \x01(\x05\x12\x1d\n\x02rw\x18\x02 \x01(\x0b\x32\x11.wedgeblock.RWSet\x12\x12\n\nmerkleRoot\x18\x03 \x01(\t\x12\x13\n\x0bmerkleProof\x18\x04 \x01(\x0c\"A\n\rHash1Response\x12\x1d\n\x02h1\x18\x01 \x01(\x0b\x32\x11.wedgeblock.Hash1\x12\x11\n\tsignature\x18\x02 \x01(\x0c\"/\n\x07LogHash\x12\x10\n\x08logIndex\x18\x01 \x01(\x05\x12\x12\n\nmerkleRoot\x18\x02 \x01(\t\"A\n\x05Hash2\x12\x0f\n\x07TxnHash\x18\x01 \x01(\x0c\x12\'\n\x06status\x18\x02 \x01(\x0e\x32\x17.wedgeblock.Hash2Status\"-\n\x08LogEntry\x12\r\n\x05index\x18\x01 \x01(\x05\x12\x12\n\nmerkleTree\x18\x02 \x01(\x0c\"\x19\n\x08LogIndex\x12\r\n\x05index\x18\x01 \x01(\x05*\x19\n\x07TxnType\x12\x06\n\x02RO\x10\x00\x12\x06\n\x02RW\x10\x01*4\n\x0bHash2Status\x12\x0b\n\x07INVALID\x10\x00\x12\r\n\tNOT_READY\x10\x01\x12\t\n\x05VALID\x10\x02\x32\x82\x01\n\x08\x45\x64geNode\x12=\n\x07\x45xecute\x12\x17.wedgeblock.Transaction\x1a\x19.wedgeblock.Hash1Response\x12\x37\n\rGetPhase2Hash\x12\x13.wedgeblock.LogHash\x1a\x11.wedgeblock.Hash2b\x06proto3'
 )
 
 _TXNTYPE = _descriptor.EnumDescriptor(
@@ -144,15 +144,15 @@ _RWSET = _descriptor.Descriptor(
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
       name='key', full_name='wedgeblock.RWSet.key', index=1,
-      number=2, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
+      number=2, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"",
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
       name='val', full_name='wedgeblock.RWSet.val', index=2,
-      number=3, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
+      number=3, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"",
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),

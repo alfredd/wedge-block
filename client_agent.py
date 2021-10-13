@@ -7,6 +7,7 @@ import pickle
 import merklelib
 import hashlib
 import time
+import os
 
 from block_validator import BlockValidator, CallBackValidator
 
@@ -48,7 +49,7 @@ class ClientAgent:
         received_response_hash = SHA256.new(received_response)
         try:
             self.verifier.verify(received_response_hash, response_signature)
-            print("The response is authentic.")
+            # print("The response is authentic.")
         except ValueError:
             print("The response is not authentic.")
 
@@ -57,7 +58,7 @@ class ClientAgent:
         hash2 = self.stub.GetPhase2Hash(logHash)
         if hash2.status is wb.Hash2Status.INVALID:
             # raise Exception
-            print("logHash ", logHash, " is invalid")
+            raise Exception("logHash ", logHash, " is invalid")
 
         while hash2.status is not wb.Hash2Status.VALID:
             hash2 = self.stub.GetPhase2Hash(logHash)
@@ -92,7 +93,12 @@ class ClientAgent:
         self.performance_monitor = ClientAgent.PerformanceMonitor(max_threads)
 
         for i in range(max_threads):
-            thread = threading.Thread(target=self._send_request, args=(str(i), str(i * i)))
+            # original experiments use below line
+            # thread = threading.Thread(target=self._send_request, args=(str(i), str(i * i)))
+
+            # new experiments use below line
+            # key size fixed at 8Bytes, value size range (4, 16, 64, 256)
+            thread = threading.Thread(target=self._send_request, args=(os.urandom(8), os.urandom(4)))
             all_threads.append(thread)
             thread.start()
 
@@ -117,13 +123,13 @@ class ClientAgent:
             t = time.perf_counter()
             self.latency_update_lock.acquire()
             self.phase1_latency += t - self.start
-            print("Phase1, ", (t - self.start))
+            # print("Phase1, ", (t - self.start))
             self.latency_update_lock.release()
 
         def mark_phase2_complete(self):
             self.latency_update_lock.acquire()
             self.phase2_latency += time.perf_counter() - self.start
-            print("Phase2 ", time.perf_counter() - self.start)
+            # print("Phase2 ", time.perf_counter() - self.start)
             self.latency_update_lock.release()
 
         def print_performance(self):

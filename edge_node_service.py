@@ -31,7 +31,7 @@ class EdgeService(wbgrpc.EdgeNodeServicer):
         received_content_hash = SHA256.new(received_content)
         try:
             self.verifier.verify(received_content_hash, signature)
-            print("The request is authentic.")
+            # print("The request is authentic.")
         except ValueError:
             print("The request is not authentic.")
 
@@ -55,7 +55,7 @@ class EdgeService(wbgrpc.EdgeNodeServicer):
 
 
 def serve():
-    server = grpc.server(ThreadPoolExecutor(max_workers=10))
+    server = grpc.server(ThreadPoolExecutor(max_workers=500))
     wbgrpc.add_EdgeNodeServicer_to_server(
         EdgeService(), server)
     server.add_insecure_port('[::]:50051')

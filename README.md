@@ -37,3 +37,6 @@
 
 * merklelib
   > `pip install merklelib`
+              >
+* web3
+  > `pip install web3`

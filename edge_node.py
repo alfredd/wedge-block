@@ -16,7 +16,7 @@ class EdgeNode:
         self.log = Log()
         self.buffer = []
         self.buffer_check_interval = 10  # seconds
-        self.max_buffer_size = 10
+        self.max_buffer_size = 500
         self.buffer_lock = threading.Lock()
 
         self.eth_connector = RopEth()
@@ -94,7 +94,7 @@ class EdgeNode:
 
         self.log_added_event.set()
         self.buffer.clear()
-        print("current log is: \n", self.log)
+        print("most recent log is: \n", self.log.get_most_recent_entry())
         self.log_added_event.clear()
         self.buffer_lock.release()
 
@@ -117,7 +117,7 @@ class EdgeNode:
         tree = self.log.get_log_entry(target_index).merkle_tree
         root = tree.merkle_root
         proof = tree.get_proof(data)
-        assert merklelib.verify_leaf_inclusion(data, proof, self.hash_func, root)
+        # assert merklelib.verify_leaf_inclusion(data, proof, self.hash_func, root)
         proof_pickle = pickle.dumps(proof)
 
         hash1 = wedgeblock_pb2.Hash1(rw=txn.rw, merkleRoot=root, merkleProof=proof_pickle)
@@ -177,6 +177,9 @@ class Log:
 
     def get_next_log_index(self):
         return len(self.entries)
+
+    def get_most_recent_entry(self):
+        return self.entries[-1]
 
     def __str__(self):
         rtn = ""
