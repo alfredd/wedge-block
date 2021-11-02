@@ -148,7 +148,7 @@ class EdgeNode:
                     for index in waiting_indexes:
                         self.kernel.update_hash2(index, txn_hash)
                         self.analyser.history[index].hash2_received = time.perf_counter()
-                        print(self.analyser.history[index])
+                        # print(self.analyser.history[index])
                         # print("Phase2 complete: \n", self.kernel.get_log_entry(index))
                         # print("Time analysis: \n", self.analyser.history[index], "\n")
                     break
@@ -181,7 +181,7 @@ class EdgeNode:
         if not self.hash2_manager_thread.is_alive():
             self.hash2_manager_thread = threading.Thread(target=self.hash2_manager, name="hash2_manager_thread",
                                                          daemon=True)
-            self.hash2_manager_thread.start()
+            # self.hash2_manager_thread.start()
 
         # log entry is added to the log
         tree = log_entry.merkle_tree

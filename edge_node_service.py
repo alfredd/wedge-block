@@ -34,10 +34,10 @@ class EdgeService(wbgrpc.EdgeNodeServicer):
         #   txn_hash = SHA256.new(txn_content)
         #   self.verifier.verify(txn_hash, signature)
         chunk_size = self.batch_size
-        for chunk_n in range(len(request.content)//chunk_size):
+        for chunk_n in range(len(request.content)//chunk_size + 1):
             chunk = request.content[chunk_n*chunk_size:(chunk_n+1)*chunk_size]
             chunk_response = []
-            start = time.perf_counter()
+            # start = time.perf_counter()
             for h1 in self.edge_node.process_txn_batch(chunk):
                 # response_content_bytes = pickle.dumps(h1)
                 # response_content_hash = SHA256.new(response_content_bytes)
@@ -46,8 +46,9 @@ class EdgeService(wbgrpc.EdgeNodeServicer):
                 response = wb.Hash1Response(h1=h1, signature=response_signature)
                 chunk_response.append(response)
             response_batch = wb.Hash1ResponseBatch(content=chunk_response)
-            print("response_batch generated using", time.perf_counter() - start)
+            # print("response_batch generated using", time.perf_counter() - start)
             yield response_batch
+        print("ExecuteBatch Completed")
 
 
     def GetPhase2Hash(self, request: wb.LogHash, context):

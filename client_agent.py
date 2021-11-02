@@ -79,7 +79,7 @@ class ClientAgent:
     def _generate_transaction_batch(self, total_number) -> wb.TransactionBatch:
         transaction_batch = wb.TransactionBatch()
         for i in range(total_number):
-            t = self._make_transaction(i.to_bytes(8,'big'), i.to_bytes(8,'big'))
+            t = self._make_transaction(i.to_bytes(8,'big'), i.to_bytes(64,'big'))
             transaction_batch.content.append(t)
         return transaction_batch
 
@@ -88,7 +88,7 @@ class ClientAgent:
 
         batch_size = 10000
         transaction_batch = self._generate_transaction_batch(batch_size)
-        print("finished generating batch")
+        # print("finished generating batch")
         collected_hash1 = set()
         hash1_list = []
 
@@ -103,26 +103,26 @@ class ClientAgent:
                 # self._verify_response(hash1_response)
                 self.performance_monitor.mark_phase1_complete()
 
-                hash1 = hash1_response.h1
-                if hash1.merkleRoot not in collected_hash1:
-                    collected_hash1.add(hash1.merkleRoot)
-                    hash1_list.append(hash1)
-
-                merkle_proof = pickle.loads(hash1.merkleProof)  # deserialize
-                data = (hash1_response.h1.rw.key, hash1_response.h1.rw.val)  # data to be verified
-
-                assert merklelib.verify_leaf_inclusion(data, merkle_proof, hash_func, hash1.merkleRoot)
+                # hash1 = hash1_response.h1
+                # if hash1.merkleRoot not in collected_hash1:
+                #     collected_hash1.add(hash1.merkleRoot)
+                #     hash1_list.append(hash1)
+                #
+                # merkle_proof = pickle.loads(hash1.merkleProof)  # deserialize
+                # data = (hash1_response.h1.rw.key, hash1_response.h1.rw.val)  # data to be verified
+                #
+                # assert merklelib.verify_leaf_inclusion(data, merkle_proof, hash_func, hash1.merkleRoot)
             # print("response batch processed using:", time.perf_counter() - start)
 
-        all_hash2_threads = []
-        for hash1 in hash1_list:
-            thread = threading.Thread(target=self._check_hash2, args=(hash1,))
-            all_hash2_threads.append(thread)
-            thread.start()
-
-        for thread in all_hash2_threads:
-            thread.join()
-            self.performance_monitor.mark_phase2_complete()
+        # all_hash2_threads = []
+        # for hash1 in hash1_list:
+        #     thread = threading.Thread(target=self._check_hash2, args=(hash1,))
+        #     all_hash2_threads.append(thread)
+        #     thread.start()
+        #
+        # for thread in all_hash2_threads:
+        #     thread.join()
+        #     self.performance_monitor.mark_phase2_complete()
 
         self.performance_monitor.print_batch_performance()
 
@@ -131,6 +131,7 @@ class ClientAgent:
             self.precision = 4
             self.phase1_latency = []
             self.phase2_latency = []
+            self.max_phase2_latency = []
             self.start = None
 
         def mark_start(self):
@@ -143,11 +144,12 @@ class ClientAgent:
         def mark_phase2_complete(self):
             latency = time.perf_counter() - self.start
             self.phase2_latency.append(round(latency, self.precision))
+            self.max_phase2_latency = latency
             # print("Phase2 ", time.perf_counter() - self.start)
 
         def print_batch_performance(self):
             print('{} & {} & {}'.format(
                 round(mean(self.phase1_latency), self.precision),  # average phase1 latency over all transactions
                 round(self.phase1_latency[0], self.precision), # the minimum phase1 latnecy
-                self.phase2_latency # a list of phase2 latencies, one for each unique hash1
+                self.max_phase2_latency # a list of phase2 latencies, one for each unique hash1
             ))
