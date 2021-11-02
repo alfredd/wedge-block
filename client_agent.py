@@ -8,6 +8,7 @@ import merklelib
 import hashlib
 import time
 import os
+from statistics import mean
 
 from block_validator import BlockValidator, CallBackValidator
 
@@ -66,73 +67,87 @@ class ClientAgent:
         cb = CallBackValidator()
         self.bc_block_validator.insert_to_verify(hash2.TxnHash, hash1.merkleRoot, hash1.logIndex, cb.call_back)
 
-    def _send_request(self, key: str, val: str):
+    def _make_transaction(self, key, val) -> wb.Transaction:
+        if type(key) is str and type(val) is str:
+            key = str.encode(key)
+            val = str.encode(val)
         txn_content = wb.RWSet(type=wb.TxnType.RW, key=key, val=val)
-        txn_signature = self._sign_request(txn_content)
-        t = wb.Transaction(rw=txn_content, signature=txn_signature)
+        # txn_signature = self._sign_request(txn_content)
+        txn_signature = None
+        return wb.Transaction(rw=txn_content, signature=txn_signature)
 
+    def _generate_transaction_batch(self, total_number) -> wb.TransactionBatch:
+        transaction_batch = wb.TransactionBatch()
+        for i in range(total_number):
+            t = self._make_transaction(i.to_bytes(8,'big'), i.to_bytes(8,'big'))
+            transaction_batch.content.append(t)
+        return transaction_batch
+
+    def run(self, stub: wbgrpc.EdgeNodeStub):
+        self.stub = stub
+
+        batch_size = 10000
+        transaction_batch = self._generate_transaction_batch(batch_size)
+        print("finished generating batch")
+        collected_hash1 = set()
+        hash1_list = []
+
+        self.performance_monitor = ClientAgent.PerformanceMonitor()
         self.performance_monitor.mark_start()
 
-        hash1_response = self.stub.Execute(t)
-        self._verify_response(hash1_response)
+        # send #batch_size many transactions to the edge node
+        for hash1_response_batch in self.stub.ExecuteBatch(transaction_batch):
+            # print("client received", hash1_response.h1.rw.key.decode(), hash1_response.h1.logIndex)
+            start = time.perf_counter()
+            for hash1_response in hash1_response_batch.content:
+                # self._verify_response(hash1_response)
+                self.performance_monitor.mark_phase1_complete()
 
-        self.performance_monitor.mark_phase1_complete()
+                hash1 = hash1_response.h1
+                if hash1.merkleRoot not in collected_hash1:
+                    collected_hash1.add(hash1.merkleRoot)
+                    hash1_list.append(hash1)
 
-        hash1 = hash1_response.h1
-        merkle_proof = pickle.loads(hash1.merkleProof)  # deserialize
-        data = (t.rw.key, t.rw.val)  # data to be verified
+                merkle_proof = pickle.loads(hash1.merkleProof)  # deserialize
+                data = (hash1_response.h1.rw.key, hash1_response.h1.rw.val)  # data to be verified
 
-        assert merklelib.verify_leaf_inclusion(data, merkle_proof, hash_func, hash1.merkleRoot)
+                assert merklelib.verify_leaf_inclusion(data, merkle_proof, hash_func, hash1.merkleRoot)
+            # print("response batch processed using:", time.perf_counter() - start)
 
-        self._check_hash2(hash1)
-        self.performance_monitor.mark_phase2_complete()
-
-    def run(self, stub: wbgrpc.EdgeNodeStub, max_threads: int):
-        self.stub = stub
-        all_threads = []
-        self.performance_monitor = ClientAgent.PerformanceMonitor(max_threads)
-
-        for i in range(max_threads):
-            # original experiments use below line
-            # thread = threading.Thread(target=self._send_request, args=(str(i), str(i * i)))
-
-            # new experiments use below line
-            # key size fixed at 8Bytes, value size range (4, 16, 64, 256)
-            thread = threading.Thread(target=self._send_request, args=(os.urandom(8), os.urandom(4)))
-            all_threads.append(thread)
+        all_hash2_threads = []
+        for hash1 in hash1_list:
+            thread = threading.Thread(target=self._check_hash2, args=(hash1,))
+            all_hash2_threads.append(thread)
             thread.start()
 
-        for thread in all_threads:
+        for thread in all_hash2_threads:
             thread.join()
+            self.performance_monitor.mark_phase2_complete()
 
-        self.performance_monitor.print_performance()
+        self.performance_monitor.print_batch_performance()
 
     class PerformanceMonitor:
-        def __init__(self, agent_count:int):
+        def __init__(self):
             self.precision = 4
-            self.phase1_latency = 0
-            self.phase2_latency = 0
-            self.latency_update_lock = threading.Lock()
-            self.agent_count = agent_count
+            self.phase1_latency = []
+            self.phase2_latency = []
             self.start = None
 
         def mark_start(self):
             self.start = time.perf_counter()
 
         def mark_phase1_complete(self):
-            t = time.perf_counter()
-            self.latency_update_lock.acquire()
-            self.phase1_latency += t - self.start
-            # print("Phase1, ", (t - self.start))
-            self.latency_update_lock.release()
+            latency = time.perf_counter() - self.start
+            self.phase1_latency.append(latency)
 
         def mark_phase2_complete(self):
-            self.latency_update_lock.acquire()
-            self.phase2_latency += time.perf_counter() - self.start
+            latency = time.perf_counter() - self.start
+            self.phase2_latency.append(round(latency, self.precision))
             # print("Phase2 ", time.perf_counter() - self.start)
-            self.latency_update_lock.release()
 
-        def print_performance(self):
-            # average over all requests
-            print('{} & {}'.format(round(self.phase1_latency / self.agent_count, self.precision),
-                                   round(self.phase2_latency / self.agent_count, self.precision)))
+        def print_batch_performance(self):
+            print('{} & {} & {}'.format(
+                round(mean(self.phase1_latency), self.precision),  # average phase1 latency over all transactions
+                round(self.phase1_latency[0], self.precision), # the minimum phase1 latnecy
+                self.phase2_latency # a list of phase2 latencies, one for each unique hash1
+            ))

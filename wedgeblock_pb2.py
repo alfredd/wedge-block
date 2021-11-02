@@ -20,7 +20,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x10wedgeblock.proto\x12\nwedgeblock\"?\n\x0bTransaction\x12\x1d\n\x02rw\x18\x01 \x01(\x0b\x32\x11.wedgeblock.RWSet\x12\x11\n\tsignature\x18\x02 \x01(\x0c\"D\n\x05RWSet\x12!\n\x04type\x18\x01 \x01(\x0e\x32\x13.wedgeblock.TxnType\x12\x0b\n\x03key\x18\x02 \x01(\x0c\x12\x0b\n\x03val\x18\x03 \x01(\x0c\"a\n\x05Hash1\x12\x10\n\x08logIndex\x18\x01 \x01(\x05\x12\x1d\n\x02rw\x18\x02 \x01(\x0b\x32\x11.wedgeblock.RWSet\x12\x12\n\nmerkleRoot\x18\x03 \x01(\t\x12\x13\n\x0bmerkleProof\x18\x04 \x01(\x0c\"A\n\rHash1Response\x12\x1d\n\x02h1\x18\x01 \x01(\x0b\x32\x11.wedgeblock.Hash1\x12\x11\n\tsignature\x18\x02 \x01(\x0c\"/\n\x07LogHash\x12\x10\n\x08logIndex\x18\x01 \x01(\x05\x12\x12\n\nmerkleRoot\x18\x02 \x01(\t\"A\n\x05Hash2\x12\x0f\n\x07TxnHash\x18\x01 \x01(\x0c\x12\'\n\x06status\x18\x02 \x01(\x0e\x32\x17.wedgeblock.Hash2Status\"-\n\x08LogEntry\x12\r\n\x05index\x18\x01 \x01(\x05\x12\x12\n\nmerkleTree\x18\x02 \x01(\x0c\"\x19\n\x08LogIndex\x12\r\n\x05index\x18\x01 \x01(\x05*\x19\n\x07TxnType\x12\x06\n\x02RO\x10\x00\x12\x06\n\x02RW\x10\x01*4\n\x0bHash2Status\x12\x0b\n\x07INVALID\x10\x00\x12\r\n\tNOT_READY\x10\x01\x12\t\n\x05VALID\x10\x02\x32\x82\x01\n\x08\x45\x64geNode\x12=\n\x07\x45xecute\x12\x17.wedgeblock.Transaction\x1a\x19.wedgeblock.Hash1Response\x12\x37\n\rGetPhase2Hash\x12\x13.wedgeblock.LogHash\x1a\x11.wedgeblock.Hash2b\x06proto3'
+  serialized_pb=b'\n\x10wedgeblock.proto\x12\nwedgeblock\"D\n\x05RWSet\x12!\n\x04type\x18\x01 \x01(\x0e\x32\x13.wedgeblock.TxnType\x12\x0b\n\x03key\x18\x02 \x01(\x0c\x12\x0b\n\x03val\x18\x03 \x01(\x0c\"?\n\x0bTransaction\x12\x1d\n\x02rw\x18\x01 \x01(\x0b\x32\x11.wedgeblock.RWSet\x12\x11\n\tsignature\x18\x02 \x01(\x0c\"<\n\x10TransactionBatch\x12(\n\x07\x63ontent\x18\x01 \x03(\x0b\x32\x17.wedgeblock.Transaction\"a\n\x05Hash1\x12\x10\n\x08logIndex\x18\x01 \x01(\x05\x12\x1d\n\x02rw\x18\x02 \x01(\x0b\x32\x11.wedgeblock.RWSet\x12\x12\n\nmerkleRoot\x18\x03 \x01(\t\x12\x13\n\x0bmerkleProof\x18\x04 \x01(\x0c\"A\n\rHash1Response\x12\x1d\n\x02h1\x18\x01 \x01(\x0b\x32\x11.wedgeblock.Hash1\x12\x11\n\tsignature\x18\x02 \x01(\x0c\"@\n\x12Hash1ResponseBatch\x12*\n\x07\x63ontent\x18\x01 \x03(\x0b\x32\x19.wedgeblock.Hash1Response\"/\n\x07LogHash\x12\x10\n\x08logIndex\x18\x01 \x01(\x05\x12\x12\n\nmerkleRoot\x18\x02 \x01(\t\"A\n\x05Hash2\x12\x0f\n\x07TxnHash\x18\x01 \x01(\x0c\x12\'\n\x06status\x18\x02 \x01(\x0e\x32\x17.wedgeblock.Hash2Status\"-\n\x08LogEntry\x12\r\n\x05index\x18\x01 \x01(\x05\x12\x12\n\nmerkleTree\x18\x02 \x01(\x0c\"\x19\n\x08LogIndex\x12\r\n\x05index\x18\x01 \x01(\x05*\x19\n\x07TxnType\x12\x06\n\x02RO\x10\x00\x12\x06\n\x02RW\x10\x01*4\n\x0bHash2Status\x12\x0b\n\x07INVALID\x10\x00\x12\r\n\tNOT_READY\x10\x01\x12\t\n\x05VALID\x10\x02\x32\xd2\x01\n\x08\x45\x64geNode\x12=\n\x07\x45xecute\x12\x17.wedgeblock.Transaction\x1a\x19.wedgeblock.Hash1Response\x12N\n\x0c\x45xecuteBatch\x12\x1c.wedgeblock.TransactionBatch\x1a\x1e.wedgeblock.Hash1ResponseBatch0\x01\x12\x37\n\rGetPhase2Hash\x12\x13.wedgeblock.LogHash\x1a\x11.wedgeblock.Hash2b\x06proto3'
 )
 
 _TXNTYPE = _descriptor.EnumDescriptor(
@@ -43,8 +43,8 @@ _TXNTYPE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=523,
-  serialized_end=548,
+  serialized_start=651,
+  serialized_end=676,
 )
 _sym_db.RegisterEnumDescriptor(_TXNTYPE)
 
@@ -74,8 +74,8 @@ _HASH2STATUS = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=550,
-  serialized_end=602,
+  serialized_start=678,
+  serialized_end=730,
 )
 _sym_db.RegisterEnumDescriptor(_HASH2STATUS)
 
@@ -86,45 +86,6 @@ INVALID = 0
 NOT_READY = 1
 VALID = 2
 
-
-
-_TRANSACTION = _descriptor.Descriptor(
-  name='Transaction',
-  full_name='wedgeblock.Transaction',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  create_key=_descriptor._internal_create_key,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='rw', full_name='wedgeblock.Transaction.rw', index=0,
-      number=1, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='signature', full_name='wedgeblock.Transaction.signature', index=1,
-      number=2, type=12, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"",
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  serialized_options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=32,
-  serialized_end=95,
-)
 
 
 _RWSET = _descriptor.Descriptor(
@@ -168,8 +129,79 @@ _RWSET = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=97,
+  serialized_start=32,
+  serialized_end=100,
+)
+
+
+_TRANSACTION = _descriptor.Descriptor(
+  name='Transaction',
+  full_name='wedgeblock.Transaction',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='rw', full_name='wedgeblock.Transaction.rw', index=0,
+      number=1, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='signature', full_name='wedgeblock.Transaction.signature', index=1,
+      number=2, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"",
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=102,
   serialized_end=165,
+)
+
+
+_TRANSACTIONBATCH = _descriptor.Descriptor(
+  name='TransactionBatch',
+  full_name='wedgeblock.TransactionBatch',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='content', full_name='wedgeblock.TransactionBatch.content', index=0,
+      number=1, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=167,
+  serialized_end=227,
 )
 
 
@@ -221,8 +253,8 @@ _HASH1 = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=167,
-  serialized_end=264,
+  serialized_start=229,
+  serialized_end=326,
 )
 
 
@@ -260,8 +292,40 @@ _HASH1RESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=266,
-  serialized_end=331,
+  serialized_start=328,
+  serialized_end=393,
+)
+
+
+_HASH1RESPONSEBATCH = _descriptor.Descriptor(
+  name='Hash1ResponseBatch',
+  full_name='wedgeblock.Hash1ResponseBatch',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='content', full_name='wedgeblock.Hash1ResponseBatch.content', index=0,
+      number=1, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=395,
+  serialized_end=459,
 )
 
 
@@ -299,8 +363,8 @@ _LOGHASH = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=333,
-  serialized_end=380,
+  serialized_start=461,
+  serialized_end=508,
 )
 
 
@@ -338,8 +402,8 @@ _HASH2 = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=382,
-  serialized_end=447,
+  serialized_start=510,
+  serialized_end=575,
 )
 
 
@@ -377,8 +441,8 @@ _LOGENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=449,
-  serialized_end=494,
+  serialized_start=577,
+  serialized_end=622,
 )
 
 
@@ -409,19 +473,23 @@ _LOGINDEX = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=496,
-  serialized_end=521,
+  serialized_start=624,
+  serialized_end=649,
 )
 
-_TRANSACTION.fields_by_name['rw'].message_type = _RWSET
 _RWSET.fields_by_name['type'].enum_type = _TXNTYPE
+_TRANSACTION.fields_by_name['rw'].message_type = _RWSET
+_TRANSACTIONBATCH.fields_by_name['content'].message_type = _TRANSACTION
 _HASH1.fields_by_name['rw'].message_type = _RWSET
 _HASH1RESPONSE.fields_by_name['h1'].message_type = _HASH1
+_HASH1RESPONSEBATCH.fields_by_name['content'].message_type = _HASH1RESPONSE
 _HASH2.fields_by_name['status'].enum_type = _HASH2STATUS
-DESCRIPTOR.message_types_by_name['Transaction'] = _TRANSACTION
 DESCRIPTOR.message_types_by_name['RWSet'] = _RWSET
+DESCRIPTOR.message_types_by_name['Transaction'] = _TRANSACTION
+DESCRIPTOR.message_types_by_name['TransactionBatch'] = _TRANSACTIONBATCH
 DESCRIPTOR.message_types_by_name['Hash1'] = _HASH1
 DESCRIPTOR.message_types_by_name['Hash1Response'] = _HASH1RESPONSE
+DESCRIPTOR.message_types_by_name['Hash1ResponseBatch'] = _HASH1RESPONSEBATCH
 DESCRIPTOR.message_types_by_name['LogHash'] = _LOGHASH
 DESCRIPTOR.message_types_by_name['Hash2'] = _HASH2
 DESCRIPTOR.message_types_by_name['LogEntry'] = _LOGENTRY
@@ -430,6 +498,13 @@ DESCRIPTOR.enum_types_by_name['TxnType'] = _TXNTYPE
 DESCRIPTOR.enum_types_by_name['Hash2Status'] = _HASH2STATUS
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
+RWSet = _reflection.GeneratedProtocolMessageType('RWSet', (_message.Message,), {
+  'DESCRIPTOR' : _RWSET,
+  '__module__' : 'wedgeblock_pb2'
+  # @@protoc_insertion_point(class_scope:wedgeblock.RWSet)
+  })
+_sym_db.RegisterMessage(RWSet)
+
 Transaction = _reflection.GeneratedProtocolMessageType('Transaction', (_message.Message,), {
   'DESCRIPTOR' : _TRANSACTION,
   '__module__' : 'wedgeblock_pb2'
@@ -437,12 +512,12 @@ Transaction = _reflection.GeneratedProtocolMessageType('Transaction', (_message.
   })
 _sym_db.RegisterMessage(Transaction)
 
-RWSet = _reflection.GeneratedProtocolMessageType('RWSet', (_message.Message,), {
-  'DESCRIPTOR' : _RWSET,
+TransactionBatch = _reflection.GeneratedProtocolMessageType('TransactionBatch', (_message.Message,), {
+  'DESCRIPTOR' : _TRANSACTIONBATCH,
   '__module__' : 'wedgeblock_pb2'
-  # @@protoc_insertion_point(class_scope:wedgeblock.RWSet)
+  # @@protoc_insertion_point(class_scope:wedgeblock.TransactionBatch)
   })
-_sym_db.RegisterMessage(RWSet)
+_sym_db.RegisterMessage(TransactionBatch)
 
 Hash1 = _reflection.GeneratedProtocolMessageType('Hash1', (_message.Message,), {
   'DESCRIPTOR' : _HASH1,
@@ -457,6 +532,13 @@ Hash1Response = _reflection.GeneratedProtocolMessageType('Hash1Response', (_mess
   # @@protoc_insertion_point(class_scope:wedgeblock.Hash1Response)
   })
 _sym_db.RegisterMessage(Hash1Response)
+
+Hash1ResponseBatch = _reflection.GeneratedProtocolMessageType('Hash1ResponseBatch', (_message.Message,), {
+  'DESCRIPTOR' : _HASH1RESPONSEBATCH,
+  '__module__' : 'wedgeblock_pb2'
+  # @@protoc_insertion_point(class_scope:wedgeblock.Hash1ResponseBatch)
+  })
+_sym_db.RegisterMessage(Hash1ResponseBatch)
 
 LogHash = _reflection.GeneratedProtocolMessageType('LogHash', (_message.Message,), {
   'DESCRIPTOR' : _LOGHASH,
@@ -495,8 +577,8 @@ _EDGENODE = _descriptor.ServiceDescriptor(
   index=0,
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_start=605,
-  serialized_end=735,
+  serialized_start=733,
+  serialized_end=943,
   methods=[
   _descriptor.MethodDescriptor(
     name='Execute',
@@ -509,9 +591,19 @@ _EDGENODE = _descriptor.ServiceDescriptor(
     create_key=_descriptor._internal_create_key,
   ),
   _descriptor.MethodDescriptor(
+    name='ExecuteBatch',
+    full_name='wedgeblock.EdgeNode.ExecuteBatch',
+    index=1,
+    containing_service=None,
+    input_type=_TRANSACTIONBATCH,
+    output_type=_HASH1RESPONSEBATCH,
+    serialized_options=None,
+    create_key=_descriptor._internal_create_key,
+  ),
+  _descriptor.MethodDescriptor(
     name='GetPhase2Hash',
     full_name='wedgeblock.EdgeNode.GetPhase2Hash',
-    index=1,
+    index=2,
     containing_service=None,
     input_type=_LOGHASH,
     output_type=_HASH2,

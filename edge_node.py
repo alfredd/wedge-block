@@ -1,7 +1,6 @@
 import wedgeblock_pb2
 
 from merklelib import MerkleTree
-import merklelib
 import hashlib
 import pickle
 import codecs
@@ -9,163 +8,45 @@ import threading
 import time
 from ropsten_connector import *
 
-
-
-class EdgeNode:
-    def __init__(self):
-        self.log = Log()
-        self.buffer = []
-        self.buffer_check_interval = 10  # seconds
-        self.max_buffer_size = 500
-        self.buffer_lock = threading.Lock()
-
-        self.eth_connector = RopEth()
-        self.analyser = EdgeNodeAnalyser()
-
-        # threading.Thread(target=self.scheduled_buffer_check, name="buffer_check_thread", daemon=True).start()
-        self.log_added_event = threading.Event()
-
-        self.hash2_waiting_list = dict()
-        self.hash2_manager_lock = threading.Lock()
-        self.hash2_manager_thread = threading.Thread(target=self.hash2_manager, name="hash2_manager_thread",
-                                                     daemon=True)
-
-    def scheduled_buffer_check(self):
-        while True:
-            time.sleep(self.buffer_check_interval)
-            if len(self.buffer) > 0:
-                self.process_batch()
-
-    def hash2_manager(self):
-        print("hash2 manager invoked \n")
-        while len(self.hash2_waiting_list) != 0:
-            print("hash2 manager updating contract \n")
-            self.hash2_manager_lock.acquire()
-            waiting_indexes = list(self.hash2_waiting_list.keys())
-            data_to_eth = codecs.encode(pickle.dumps(self.hash2_waiting_list), "base64").decode()
-            txn_hash = self.eth_connector.updateContractData(data_to_eth)
-            self.hash2_waiting_list.clear()
-            self.hash2_manager_lock.release()
-            # waiting for eth to write into a block
-            while True:
-                time.sleep(5)
-                eth_response = self.eth_connector.getTransactionReciept(txn_hash)
-                if eth_response is not None:
-                    assert txn_hash == eth_response['transactionHash']
-                    # print(waiting_indexes)
-                    for index in waiting_indexes:
-                        log_entry = self.log.get_log_entry(index)
-                        if log_entry:
-                            log_entry.set_hash2(eth_response['transactionHash'])  # third measurement
-                            self.analyser.history[index].hash2_receive_ts = time.perf_counter()
-                            print("log entry phase2 complete: \n", log_entry)
-                            print("Time analysis: ", self.analyser.history[index].get_latency_analysis())
-                    break
-        print("hash2 manager exit \n")
-
-    def process_batch(self):
-        self.buffer_lock.acquire()
-        if len(self.buffer) == 0:
-            self.buffer_lock.release()
-            return
-        time_record = EdgeNodeAnalyser.LogEntryTimeRecord()
-        time_record.batch_size = len(self.buffer)
-
-        time_record.batch_process_ts = time.perf_counter()  # first measurement
-        tree = MerkleTree(self.buffer, self.hash_func)
-
-        next_open_index = self.log.get_next_log_index()
-        self.log.insert(LogEntry(next_open_index, tree))
-        time_record.log_insertion_ts = time.perf_counter()  # second measurement
-
-        self.analyser.add_new_time_record(next_open_index, time_record)
-
-        self.hash2_manager_lock.acquire()
-        self.hash2_waiting_list[next_open_index] = tree.merkle_root
-        self.hash2_manager_lock.release()
-        if not self.hash2_manager_thread.is_alive():
-            self.hash2_manager_thread = threading.Thread(target=self.hash2_manager, name="hash2_manager_thread",
-                                                         daemon=True)
-            self.hash2_manager_thread.start()
-
-        # data_to_eth = (tree.merkle_root, next_open_index)
-        # txn_hash = self.eth_connector.updateContractData(str(data_to_eth))
-        # threading.Thread(target=self.wait_for_eth, args=(txn_hash, data_to_eth), daemon=True).start()
-
-        self.log_added_event.set()
-        self.buffer.clear()
-        print("most recent log is: \n", self.log.get_most_recent_entry())
-        self.log_added_event.clear()
-        self.buffer_lock.release()
-
-    def get_txn_from_client(self, txn: wedgeblock_pb2.Transaction) -> wedgeblock_pb2.Hash1:
-        data = (txn.rw.key, txn.rw.val)
-        self.buffer_lock.acquire()
-        self.buffer.append(data)
-        self.buffer_lock.release()
-        target_index = self.log.get_next_log_index()
-
-        if len(self.buffer) >= self.max_buffer_size:
-            self.process_batch()
-        else:
-            self.log_added_event.wait()
-
-        # log entry is added to the log
-
-        log_index = self.log.get_log_entry(target_index).index
-        assert log_index == target_index
-        tree = self.log.get_log_entry(target_index).merkle_tree
-        root = tree.merkle_root
-        proof = tree.get_proof(data)
-        # assert merklelib.verify_leaf_inclusion(data, proof, self.hash_func, root)
-        proof_pickle = pickle.dumps(proof)
-
-        hash1 = wedgeblock_pb2.Hash1(rw=txn.rw, merkleRoot=root, merkleProof=proof_pickle)
-        hash1.logIndex = target_index
-        return hash1
-
-    def reply_h2_to_client(self, request: wedgeblock_pb2.LogHash):
-        request_index = request.logIndex
-        if self.log.get_log_entry(request_index).has_hash2():
-            return self.log.get_log_entry(request_index).get_hash2()
-        return None
-
-    def is_valid_index(self, request_index):
-        return self.log.get_log_entry(request_index) is not None
-
-    @staticmethod
-    def hash_func(value):
-        return hashlib.sha256(value).hexdigest()
-
-
 class LogEntry:
+    # an entry simulating the structure of a block in blockchain (no prev_hash used yet)
+    # provide basic functionalities on manipulating the entry: VIEW and SET
+    # Contains: 1) the index of the Log where itself resides
+    #           2) A merkle tree of unfixed size, where leaf node is a (key,val) tuple
+    #           3) A public blockchain transaction hash where the merkle tree root info is writen on chain
     def __init__(self, index, merkle_tree: MerkleTree):
+        # fixed immutable index and merkle tree info at initialization time
         self.index = index
         self.merkle_tree = merkle_tree
         self.eth_hash2 = None
 
-    def __str__(self):
-        if self.eth_hash2 is None:
-            return str(self.index) + " " + str(self.merkle_tree)
-        else:
-            return str(self.index) + " " + str(self.merkle_tree) + " " + str(self.eth_hash2)
-
     def set_hash2(self, hash2):
+        # immutable once hash2 is set
+        # return True is hash2 is successfully updated, False otherwise
         if self.eth_hash2 is None:
             self.eth_hash2 = hash2
+            return True
+        return False
 
     def has_hash2(self):
         return self.eth_hash2 is not None
 
     def get_hash2(self):
-        if self.has_hash2():
-            return self.eth_hash2
-        return None
+        return self.eth_hash2
+
+    def __str__(self):
+        description = "LogEntry at index " + str(self.index) + " with hash1: " + str(self.merkle_tree)
+        if self.eth_hash2 is not None:
+            description += " and hash2: " + str(self.eth_hash2)
+        return description
 
 
 class Log:
+    # a list of LogEntries simulating the structure of a blockchain (no prev_hash used yet)
+    # provide basic functionalities on manipulating the log: VIEW and ADD
     def __init__(self):
         self.entries = []
+        self.lock = threading.Lock()
 
     def get_log_entry(self, index):
         if 0 <= index < self.get_next_log_index():
@@ -174,6 +55,15 @@ class Log:
 
     def insert(self, log_entry: LogEntry):
         self.entries.append(log_entry)
+
+    def safe_append(self, log_entry: LogEntry, target_index: int):
+        self.lock.acquire()
+        if target_index == len(self.entries):
+            self.entries.append(log_entry)
+            self.lock.release()
+            return True
+        self.lock.release()
+        return False
 
     def get_next_log_index(self):
         return len(self.entries)
@@ -188,6 +78,133 @@ class Log:
         return rtn
 
 
+class EdgeNodeKernel:
+    # provide operations on the Log
+    def __init__(self):
+        # initialize a empty log
+        self.log = Log()
+
+    def add_entry(self, data: [(bytes,bytes)], tree=None):
+        # Input: list of (key,val) pair, each pair represent one transaction to be added
+        #        optional: a merkle tree to skip Action 1
+        # Action: 1) generate a merkle tree using the input (if necessary)
+        #         2) generate a log entry using the merkle tree
+        #         3) add the log entry into the log
+        # Output: the index in the log where the newly generated entry resides at
+
+        if tree is None:
+            tree = MerkleTree(data, self.hash_func)
+        target_index = self.log.get_next_log_index()
+        if not self.log.safe_append(LogEntry(target_index, tree), target_index):
+            target_index = self.add_entry(data,tree)
+        return target_index
+
+    def get_log_entry(self, index: int):
+        return self.log.get_log_entry(index)
+
+    def update_hash2(self, index:int, hash2):
+        # return True if logEntry at index exits and its hash2 is successfully updated
+        # return False otherwise
+        entry = self.log.get_log_entry(index)
+        if entry is None:
+            return False
+        return entry.set_hash2(hash2)
+
+    @staticmethod
+    def hash_func(value):
+        return hashlib.sha256(value).hexdigest()
+
+
+class EdgeNode:
+    def __init__(self):
+        self.kernel = EdgeNodeKernel()
+        self.eth_connector = RopEth()
+        self.analyser = EdgeNodeAnalyser()
+
+        self.hash2_waiting_list = dict()
+        self.hash2_manager_lock = threading.Lock()
+        self.hash2_manager_thread = threading.Thread(target=self.hash2_manager, name="hash2_manager_thread",
+                                                     daemon=True)
+
+    def hash2_manager(self):
+        print("hash2 manager invoked \n")
+        while len(self.hash2_waiting_list) != 0:
+            time.sleep(5)
+            print("hash2 manager updating contract \n")
+            self.hash2_manager_lock.acquire()
+            waiting_indexes = list(self.hash2_waiting_list.keys())
+            data_to_eth = codecs.encode(pickle.dumps(self.hash2_waiting_list), "base64").decode()
+            txn_hash = self.eth_connector.updateContractData(data_to_eth)
+            self.hash2_waiting_list.clear()
+            self.hash2_manager_lock.release()
+            # waiting for eth to write into a block
+            while True:
+                # check with public blockchain to see if transaction is committed every 5 seconds
+                time.sleep(5)
+                eth_response = self.eth_connector.getTransactionReciept(txn_hash)
+                if eth_response is not None:
+                    assert txn_hash == eth_response['transactionHash']
+                    # print(waiting_indexes)
+                    for index in waiting_indexes:
+                        self.kernel.update_hash2(index, txn_hash)
+                        self.analyser.history[index].hash2_received = time.perf_counter()
+                        print(self.analyser.history[index])
+                        # print("Phase2 complete: \n", self.kernel.get_log_entry(index))
+                        # print("Time analysis: \n", self.analyser.history[index], "\n")
+                    break
+        print("hash2 manager exit \n")
+
+    def process_txn_batch(self, txn_batch: [(wedgeblock_pb2.Transaction)]) -> [wedgeblock_pb2.Hash1]:
+        # Input: list of transactions to be added into the log
+        # Action: 1) pass input list to the kernel to be added
+        #         2) invoke hash2 manager thread to complete the hash2 part of the newly added entry
+        #            this thread runs in parallel and can takes much longer time
+        #         3) initialize a time record object for the newly added entry
+        #            and record timestamps before/after entry creation
+        # Output: list of hash1, each correspond to one transaction
+
+        time_record = self.analyser.LogEntryTimeRecord()
+        time_record.batch_size = len(txn_batch)
+        time_record.process_start = time.perf_counter()  # first measurement
+
+        entry_content = [(txn.rw.key, txn.rw.val) for txn in txn_batch]
+        log_index = self.kernel.add_entry(entry_content)
+        log_entry = self.kernel.get_log_entry(log_index)
+
+        time_record.entry_added = time.perf_counter()  # second measurement
+
+        self.analyser.add_new_time_record(log_index, time_record)
+
+        self.hash2_manager_lock.acquire()
+        self.hash2_waiting_list[log_index] = log_entry.merkle_tree.merkle_root
+        self.hash2_manager_lock.release()
+        if not self.hash2_manager_thread.is_alive():
+            self.hash2_manager_thread = threading.Thread(target=self.hash2_manager, name="hash2_manager_thread",
+                                                         daemon=True)
+            self.hash2_manager_thread.start()
+
+        # log entry is added to the log
+        tree = log_entry.merkle_tree
+        root = tree.merkle_root
+        hash1_list = []
+        for txn in txn_batch:
+            txn_id = (txn.rw.key, txn.rw.val)
+            proof = tree.get_proof(txn_id)
+            # assert merklelib.verify_leaf_inclusion(data, proof, self.hash_func, root)
+            proof_pickle = pickle.dumps(proof)
+            hash1 = wedgeblock_pb2.Hash1(logIndex=log_index, rw=txn.rw, merkleRoot=root, merkleProof=proof_pickle)
+            hash1_list.append(hash1)
+        self.analyser.history[log_index].hash1_responses_ready = time.perf_counter() # third measurement
+
+        return hash1_list
+
+    def get_h2_at_index(self, index):
+        return self.kernel.get_log_entry(index).get_hash2()
+
+    def entry_exist_at_index(self, index):
+        return self.kernel.get_log_entry(index) is not None
+
+
 class EdgeNodeAnalyser:
     def __init__(self):
         self.history = dict()
@@ -196,22 +213,32 @@ class EdgeNodeAnalyser:
         self.history[log_index] = record
 
     class LogEntryTimeRecord:
-        precision = 4
-
         def __init__(self):
-            self.batch_process_ts = None
-            self.log_insertion_ts = None
-            self.hash2_receive_ts = None
+            self.precision = 4
             self.batch_size = 0
+            self.process_start = 0
+            self.entry_added = 0
+            self.hash1_responses_ready = 0
+            self.hash2_received = 0
 
         def get_latency_analysis(self):
-            return "{} & {} & {} & {}".format(self.batch_size,
-                                              round(self.log_insertion_ts - self.batch_process_ts, self.precision),
-                                              round(self.hash2_receive_ts - self.log_insertion_ts, self.precision),
-                                              round(self.hash2_receive_ts - self.batch_process_ts, self.precision)
-                                              )
+            return "Batch of {} transactions completed: \n" \
+                   "Tree construction: {} \n" \
+                   "Hash1 response preparation: {} \n" \
+                   "Hash2 response preparation: {} \n" \
+                   "Total: {}".format(
+                self.batch_size,
+                round(self.entry_added - self.process_start, self.precision),
+                round(self.hash1_responses_ready - self.entry_added, self.precision),
+                round(self.hash2_received - self.entry_added, self.precision),
+                round(self.hash2_received - self.process_start, self.precision)
+            )
 
         def __str__(self):
-            return "{}, {}, {}".format(self.batch_process_ts,
-                                       self.log_insertion_ts,
-                                       self.hash2_receive_ts)
+            return "{} & {} & {} & {} & {}".format(
+                self.batch_size,
+                round(self.entry_added - self.process_start, self.precision),
+                round(self.hash1_responses_ready - self.entry_added, self.precision),
+                round(self.hash2_received - self.entry_added, self.precision),
+                round(self.hash2_received - self.process_start, self.precision)
+            )

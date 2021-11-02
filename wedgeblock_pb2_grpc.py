@@ -19,6 +19,11 @@ class EdgeNodeStub(object):
                 request_serializer=wedgeblock__pb2.Transaction.SerializeToString,
                 response_deserializer=wedgeblock__pb2.Hash1Response.FromString,
                 )
+        self.ExecuteBatch = channel.unary_stream(
+                '/wedgeblock.EdgeNode/ExecuteBatch',
+                request_serializer=wedgeblock__pb2.TransactionBatch.SerializeToString,
+                response_deserializer=wedgeblock__pb2.Hash1ResponseBatch.FromString,
+                )
         self.GetPhase2Hash = channel.unary_unary(
                 '/wedgeblock.EdgeNode/GetPhase2Hash',
                 request_serializer=wedgeblock__pb2.LogHash.SerializeToString,
@@ -30,6 +35,12 @@ class EdgeNodeServicer(object):
     """Missing associated documentation comment in .proto file."""
 
     def Execute(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ExecuteBatch(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -48,6 +59,11 @@ def add_EdgeNodeServicer_to_server(servicer, server):
                     servicer.Execute,
                     request_deserializer=wedgeblock__pb2.Transaction.FromString,
                     response_serializer=wedgeblock__pb2.Hash1Response.SerializeToString,
+            ),
+            'ExecuteBatch': grpc.unary_stream_rpc_method_handler(
+                    servicer.ExecuteBatch,
+                    request_deserializer=wedgeblock__pb2.TransactionBatch.FromString,
+                    response_serializer=wedgeblock__pb2.Hash1ResponseBatch.SerializeToString,
             ),
             'GetPhase2Hash': grpc.unary_unary_rpc_method_handler(
                     servicer.GetPhase2Hash,
@@ -78,6 +94,23 @@ class EdgeNode(object):
         return grpc.experimental.unary_unary(request, target, '/wedgeblock.EdgeNode/Execute',
             wedgeblock__pb2.Transaction.SerializeToString,
             wedgeblock__pb2.Hash1Response.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def ExecuteBatch(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_stream(request, target, '/wedgeblock.EdgeNode/ExecuteBatch',
+            wedgeblock__pb2.TransactionBatch.SerializeToString,
+            wedgeblock__pb2.Hash1ResponseBatch.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 

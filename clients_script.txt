@@ -1,6 +1,6 @@
 #!/bin/bash
 echo "\n" > client_records/C_record.txt
-python3 client.py >> client_records/C_record.txt & 
+python3 client.py >> client_records/C_record.txt &
 python3 client.py >> client_records/C_record.txt &
 python3 client.py >> client_records/C_record.txt &
 python3 client.py >> client_records/C_record.txt &
