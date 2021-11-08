@@ -2,12 +2,10 @@ from Crypto.Hash import SHA256
 from Crypto.PublicKey import ECC
 from Crypto.Signature import DSS
 
-import threading
 import pickle
 import merklelib
 import hashlib
 import time
-import os
 from statistics import mean
 
 from block_validator import BlockValidator, CallBackValidator
@@ -38,16 +36,14 @@ class ClientAgent:
         self.verifier = DSS.new(trusted_public_key, 'fips-186-3')
 
     def _sign_request(self, request_content: wb.RWSet):
-        txn_content_bytes = pickle.dumps(request_content)
-        txn_content_hash = SHA256.new(txn_content_bytes)
+        txn_content_hash = SHA256.new(request_content.SerializeToString())
         txn_signature = self.signer.sign(txn_content_hash)
         return txn_signature
 
     def _verify_response(self, hash1_response: wb.Hash1Response):
         hash1 = hash1_response.h1
-        received_response = pickle.dumps(hash1)
         response_signature = hash1_response.signature
-        received_response_hash = SHA256.new(received_response)
+        received_response_hash = SHA256.new(hash1.SerializeToString())
         try:
             self.verifier.verify(received_response_hash, response_signature)
             # print("The response is authentic.")
@@ -72,8 +68,8 @@ class ClientAgent:
             key = str.encode(key)
             val = str.encode(val)
         txn_content = wb.RWSet(type=wb.TxnType.RW, key=key, val=val)
-        # txn_signature = self._sign_request(txn_content)
-        txn_signature = None
+        txn_signature = self._sign_request(txn_content)
+        # txn_signature = None
         return wb.Transaction(rw=txn_content, signature=txn_signature)
 
     def _generate_transaction_batch(self, total_number) -> wb.TransactionBatch:
@@ -85,37 +81,45 @@ class ClientAgent:
 
     def run(self, stub: wbgrpc.EdgeNodeStub):
         self.stub = stub
+        start = time.perf_counter()
 
         batch_size = 10000
         transaction_batch = self._generate_transaction_batch(batch_size)
-        # print("finished generating batch")
-        collected_hash1 = set()
-        hash1_list = []
+        print("workload generated using: ", round(time.perf_counter() - start, 4))
+
+        unique_hash1 = dict()
 
         self.performance_monitor = ClientAgent.PerformanceMonitor()
         self.performance_monitor.mark_start()
 
-        # send #batch_size many transactions to the edge node
-        for hash1_response_batch in self.stub.ExecuteBatch(transaction_batch):
-            # print("client received", hash1_response.h1.rw.key.decode(), hash1_response.h1.logIndex)
-            start = time.perf_counter()
-            for hash1_response in hash1_response_batch.content:
-                # self._verify_response(hash1_response)
-                self.performance_monitor.mark_phase1_complete()
+        total_sig_verify = 0
+        total_tree_inclusion_verify = 0
 
-                # hash1 = hash1_response.h1
-                # if hash1.merkleRoot not in collected_hash1:
-                #     collected_hash1.add(hash1.merkleRoot)
-                #     hash1_list.append(hash1)
-                #
-                # merkle_proof = pickle.loads(hash1.merkleProof)  # deserialize
-                # data = (hash1_response.h1.rw.key, hash1_response.h1.rw.val)  # data to be verified
-                #
-                # assert merklelib.verify_leaf_inclusion(data, merkle_proof, hash_func, hash1.merkleRoot)
-            # print("response batch processed using:", time.perf_counter() - start)
+        # send #batch_size many transactions to the edge node
+        for hash1_response in self.stub.ExecuteBatch(transaction_batch):
+            ##### for hash1_response in hash1_response_batch.content:
+            # verify the signature is correct
+            sig_verify_start = time.perf_counter()
+            self._verify_response(hash1_response)
+            total_sig_verify += time.perf_counter() - sig_verify_start
+
+            # identify unique hash1 root to prepare for hash2 queries
+            hash1 = hash1_response.h1
+            if hash1.merkleRoot not in unique_hash1:
+                unique_hash1[hash1.merkleRoot] = hash1
+
+            # verify the merkle proof is correct
+            tree_inclusion_verify_start = time.perf_counter()
+            merkle_proof = pickle.loads(hash1.merkleProof)  # deserialize
+            data = (hash1_response.h1.rw.key, hash1_response.h1.rw.val)  # data to be verified
+            assert merklelib.verify_leaf_inclusion(data, merkle_proof, hash_func, hash1.merkleRoot)
+            total_tree_inclusion_verify += time.perf_counter() - tree_inclusion_verify_start
+
+            self.performance_monitor.mark_phase1_complete()
+        self.performance_monitor.mark_done()
 
         # all_hash2_threads = []
-        # for hash1 in hash1_list:
+        # for hash1 in unique_hash1.values():
         #     thread = threading.Thread(target=self._check_hash2, args=(hash1,))
         #     all_hash2_threads.append(thread)
         #     thread.start()
@@ -124,18 +128,25 @@ class ClientAgent:
         #     thread.join()
         #     self.performance_monitor.mark_phase2_complete()
 
-        self.performance_monitor.print_batch_performance()
+        print("Total time on signature verification: ", round(total_sig_verify,4))
+        print("Average time on signature verification: ", round(total_sig_verify/batch_size,4))
+        print("Total time on merkle proof verification: ", round(total_tree_inclusion_verify,4))
+        print("Average time on merkle proof verification:", round(total_tree_inclusion_verify/batch_size,4))
+        self.performance_monitor.print_workload_performance()
 
     class PerformanceMonitor:
         def __init__(self):
             self.precision = 4
             self.phase1_latency = []
             self.phase2_latency = []
-            self.max_phase2_latency = []
             self.start = None
+            self.done = None
 
         def mark_start(self):
             self.start = time.perf_counter()
+
+        def mark_done(self):
+            self.done = time.perf_counter()
 
         def mark_phase1_complete(self):
             latency = time.perf_counter() - self.start
@@ -144,12 +155,25 @@ class ClientAgent:
         def mark_phase2_complete(self):
             latency = time.perf_counter() - self.start
             self.phase2_latency.append(round(latency, self.precision))
-            self.max_phase2_latency = latency
             # print("Phase2 ", time.perf_counter() - self.start)
 
-        def print_batch_performance(self):
-            print('{} & {} & {}'.format(
+        def print_workload_performance(self):
+            print('Average phase1 latency: {} \n'
+                  'Total phase1 latency:   {} \n'
+                  'Minimum phase1 latency: {} \n'
+                  'Phase1 Throughput:      {} \n'
+                  'Phase2 latency:         {}'.format(
                 round(mean(self.phase1_latency), self.precision),  # average phase1 latency over all transactions
-                round(self.phase1_latency[0], self.precision), # the minimum phase1 latnecy
-                self.max_phase2_latency # a list of phase2 latencies, one for each unique hash1
+                round(self.done - self.start, self.precision), # total phase1 latency
+                round(self.phase1_latency[0], self.precision), # the minimum phase1 latency
+                round(len(self.phase1_latency)/ (self.done - self.start), self.precision), # throughput
+                self.phase2_latency # a list of phase2 latencies, one for each unique hash1
             ))
+
+        def get_workload_performance(self):
+            return "{} & {} & {} & {}".format(
+                round(mean(self.phase1_latency), self.precision),  # average phase1 latency over all transactions
+                round(self.phase1_latency[0], self.precision), # the minimum phase1 latency
+                round(len(self.phase1_latency)/ (self.done - self.start), self.precision), # throughput
+                self.phase2_latency # a list of phase2 latencies, one for each unique hash1
+            )

@@ -8,7 +8,6 @@ import edge_node
 
 import logging
 
-import pickle
 from Crypto.Hash import SHA256
 from Crypto.PublicKey import ECC
 from Crypto.Signature import DSS
@@ -16,7 +15,7 @@ from Crypto.Signature import DSS
 class EdgeService(wbgrpc.EdgeNodeServicer):
     def __init__(self):
         self.edge_node = edge_node.EdgeNode()
-        self.batch_size = 1000
+        self.batch_size = 2000
 
         self.trusted_public_key = ECC.import_key(open('publickey.der', 'rb').read())
         self.verifier = DSS.new(self.trusted_public_key, 'fips-186-3')
@@ -28,27 +27,50 @@ class EdgeService(wbgrpc.EdgeNodeServicer):
         raise NotImplementedError
 
     def ExecuteBatch(self, request: [(wb.Transaction)], context):
-        # to verify one incoming transaction, do
-        #   txn_content = pickle.dumps(txn.rw)
-        #   signature = txn.signature
-        #   txn_hash = SHA256.new(txn_content)
-        #   self.verifier.verify(txn_hash, signature)
-        chunk_size = self.batch_size
-        for chunk_n in range(len(request.content)//chunk_size + 1):
-            chunk = request.content[chunk_n*chunk_size:(chunk_n+1)*chunk_size]
-            chunk_response = []
-            # start = time.perf_counter()
-            for h1 in self.edge_node.process_txn_batch(chunk):
-                # response_content_bytes = pickle.dumps(h1)
-                # response_content_hash = SHA256.new(response_content_bytes)
-                # response_signature = self.signer.sign(response_content_hash)
-                response_signature = None
+        # verify all signatures are correct
+        batch_verify_avg = 0
+        batch_time_avg = 0
+        batch_signing_avg = 0
+
+        for batch_n in range(len(request.content)//self.batch_size + 1):
+            batch = request.content[batch_n*self.batch_size:(batch_n+1)*self.batch_size]
+            if (len(batch) == 0):
+                batch_n -= 1
+                break
+
+            batch_begin = time.perf_counter()
+
+            # verify txn in this batch
+            for txn in batch:
+                txn_hash = SHA256.new(txn.rw.SerializeToString())
+                self.verifier.verify(txn_hash, txn.signature)
+            batch_verify_avg += time.perf_counter() - batch_begin
+
+            # process the txn batch to get h1 batch
+            h1_result = self.edge_node.process_txn_batch(batch)
+
+            # signing the h1 batch
+            signing_start = time.perf_counter()
+            batch_response = []
+            for h1 in h1_result:
+                response_content_hash = SHA256.new(h1.SerializeToString())
+                response_signature = self.signer.sign(response_content_hash)
+                # response_signature = None
                 response = wb.Hash1Response(h1=h1, signature=response_signature)
-                chunk_response.append(response)
-            response_batch = wb.Hash1ResponseBatch(content=chunk_response)
-            # print("response_batch generated using", time.perf_counter() - start)
-            yield response_batch
-        print("ExecuteBatch Completed")
+                batch_response.append(response)
+            # batch_response = wb.Hash1ResponseBatch(content=batch_response)
+
+            batch_signing_avg += time.perf_counter() - signing_start
+            batch_time_avg += time.perf_counter() - batch_begin
+
+            for response in batch_response:
+                yield response
+
+        print("Avg time per batch (txn_verify): ", round(batch_verify_avg/(batch_n + 1),4))
+        print(self.edge_node.analyser.get_avg_record())
+        print("Avg time per batch (h1_sign): ", round(batch_signing_avg / (batch_n + 1),4))
+        print("Avg time per batch (total): ", round(batch_time_avg/(batch_n + 1),4))
+        print("ExecuteBatch Completed\n")
 
 
     def GetPhase2Hash(self, request: wb.LogHash, context):

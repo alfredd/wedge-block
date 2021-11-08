@@ -1,6 +1,7 @@
 import wedgeblock_pb2
 
 from merklelib import MerkleTree
+from statistics import mean
 import hashlib
 import pickle
 import codecs
@@ -190,12 +191,12 @@ class EdgeNode:
         for txn in txn_batch:
             txn_id = (txn.rw.key, txn.rw.val)
             proof = tree.get_proof(txn_id)
-            # assert merklelib.verify_leaf_inclusion(data, proof, self.hash_func, root)
             proof_pickle = pickle.dumps(proof)
             hash1 = wedgeblock_pb2.Hash1(logIndex=log_index, rw=txn.rw, merkleRoot=root, merkleProof=proof_pickle)
             hash1_list.append(hash1)
         self.analyser.history[log_index].hash1_responses_ready = time.perf_counter() # third measurement
 
+        # print(self.analyser.history[log_index].get_hash1_latency_analysis())
         return hash1_list
 
     def get_h2_at_index(self, index):
@@ -212,6 +213,18 @@ class EdgeNodeAnalyser:
     def add_new_time_record(self, log_index: int, record):
         self.history[log_index] = record
 
+    def get_avg_record(self):
+        avg_tree_gen = 0
+        avg_h1_prep = 0
+        for entry_record in self.history.values():
+            avg_tree_gen += entry_record.entry_added - entry_record.process_start
+            avg_h1_prep += entry_record.hash1_responses_ready - entry_record.entry_added
+        return "Avg time per batch (tree_gen): {}\n" \
+               "Avg time per batch (h1_prep): {}".format(
+            round(avg_tree_gen/len(self.history),4),
+            round(avg_h1_prep/len(self.history),4))
+
+
     class LogEntryTimeRecord:
         def __init__(self):
             self.precision = 4
@@ -220,6 +233,17 @@ class EdgeNodeAnalyser:
             self.entry_added = 0
             self.hash1_responses_ready = 0
             self.hash2_received = 0
+
+        def get_hash1_latency_analysis(self):
+            return "Batch of {} transactions completed: \n" \
+                   "Tree construction: {} \n" \
+                   "Hash1 response preparation: {} \n" \
+                   "Total: {}".format(
+                self.batch_size,
+                round(self.entry_added - self.process_start, self.precision),
+                round(self.hash1_responses_ready - self.entry_added, self.precision),
+                round(self.hash1_responses_ready - self.process_start, self.precision)
+            )
 
         def get_latency_analysis(self):
             return "Batch of {} transactions completed: \n" \
