@@ -20,11 +20,7 @@ trusted_public_key = ECC.import_key(open('publickey.der', 'rb').read())
 signer = DSS.new(private_key, 'fips-186-3')
 verifier = DSS.new(trusted_public_key, 'fips-186-3')
 
-
 verification_results = []
-sig_verify_times = []
-tree_inclusion_verify_times = []
-
 
 def hash_func(value):
     return hashlib.sha256(value).hexdigest()
@@ -79,17 +75,8 @@ def verify_response(hash1_response: wb.Hash1Response):
 
 
 def collect_result(result):
-    verification_result = result[0]
-    sig_verify_time = result[1]
-    tree_inclusion_verify_time = result[2]
-
     global verification_results
-    global sig_verify_times
-    global tree_inclusion_verify_times
-
-    verification_results.append(verification_result)
-    sig_verify_times.append(sig_verify_time)
-    tree_inclusion_verify_times.append(tree_inclusion_verify_time)
+    verification_results.append(result)
 
 
 class ClientAgent:
@@ -139,13 +126,17 @@ class ClientAgent:
         pool2.close()
         pool2.join()
 
-        try:
-            assert all(verification_results)
-        except AssertionError:
-            print("Verification Failed")
+        total_sig_verify_t = 0
+        total_tree_inclusion_verify_t = 0
 
-        total_sig_verify_t = sum(sig_verify_times)
-        total_tree_inclusion_verify_t = sum(tree_inclusion_verify_times)
+        for v_result in verification_results:
+            try:
+                assert v_result[0]
+            except AssertionError:
+                print("Verification Failed")
+
+            total_sig_verify_t += v_result[1]
+            total_tree_inclusion_verify_t += v_result[2]
 
         print("Total time on signature verification: ", round(total_sig_verify_t, 4))
         print("Average time on signature verification: ", round(total_sig_verify_t / batch_size, 4))
