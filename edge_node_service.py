@@ -15,7 +15,7 @@ from Crypto.Signature import DSS
 class EdgeService(wbgrpc.EdgeNodeServicer):
     def __init__(self):
         self.edge_node = edge_node.EdgeNode()
-        self.batch_size = 2000
+        self.batch_size = 1000
 
         self.trusted_public_key = ECC.import_key(open('publickey.der', 'rb').read())
         self.verifier = DSS.new(self.trusted_public_key, 'fips-186-3')
