@@ -6,8 +6,8 @@ import pickle
 import merklelib
 import hashlib
 import time
-from statistics import mean
 import multiprocessing as mp
+import threading
 
 from block_validator import BlockValidator, CallBackValidator
 
@@ -21,6 +21,7 @@ signer = DSS.new(private_key, 'fips-186-3')
 verifier = DSS.new(trusted_public_key, 'fips-186-3')
 
 verification_results = []
+lock = threading.Lock()
 
 def hash_func(value):
     return hashlib.sha256(value).hexdigest()
@@ -76,7 +77,9 @@ def verify_response(hash1_response: wb.Hash1Response):
 
 def collect_result(result):
     global verification_results
+    lock.acquire()
     verification_results.append(result)
+    lock.release()
 
 
 class ClientAgent:
