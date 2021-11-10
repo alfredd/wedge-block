@@ -113,7 +113,8 @@ class EdgeService(wbgrpc.EdgeNodeServicer):
 
 
 def serve():
-    server = grpc.server(ThreadPoolExecutor(max_workers=10))
+    options = [('grpc.max_receive_message_length', 1024 * 1024 * 1024)]
+    server = grpc.server(ThreadPoolExecutor(max_workers=10), options=options)
     wbgrpc.add_EdgeNodeServicer_to_server(
         EdgeService(), server)
     server.add_insecure_port('[::]:50051')
