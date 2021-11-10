@@ -20,8 +20,6 @@ trusted_public_key = ECC.import_key(open('publickey.der', 'rb').read())
 signer = DSS.new(private_key, 'fips-186-3')
 verifier = DSS.new(trusted_public_key, 'fips-186-3')
 
-verification_results = []
-lock = threading.Lock()
 
 def hash_func(value):
     return hashlib.sha256(value).hexdigest()
@@ -58,9 +56,7 @@ def verify_response(hash1_response: wb.Hash1Response):
     received_response_hash = SHA256.new(hash1.SerializeToString())
     try:
         verifier.verify(received_response_hash, response_signature)
-        # print("The response is authentic.")
     except ValueError:
-        # print("The response is not authentic.")
         return (False, 0, 0)
 
     sig_verify_time = time.perf_counter() - sig_verify_start
@@ -73,13 +69,6 @@ def verify_response(hash1_response: wb.Hash1Response):
         return (False, 0, 0)
     tree_inclusion_verify_time = time.perf_counter() - tree_inclusion_verify_start
     return (True, sig_verify_time, tree_inclusion_verify_time)
-
-
-def collect_result(result):
-    global verification_results
-    lock.acquire()
-    verification_results.append(result)
-    lock.release()
 
 
 class ClientAgent:
@@ -113,42 +102,50 @@ class ClientAgent:
 
         unique_hash1 = dict()
 
-        # self.performance_monitor = ClientAgent.PerformanceMonitor()
-        # self.performance_monitor.mark_start()
-
         pool2 = mp.Pool(mp.cpu_count())
+        result_objects = []
         # send #batch_size many transactions to the edge node
+        request_sent_t = time.perf_counter()
+        first_response_received_t = None
+        avg_round_trip_time = 0
         for hash1_response in self.stub.ExecuteBatch(transaction_batch):
-            hash1 = hash1_response.h1
-            if hash1.merkleRoot not in unique_hash1:
-                unique_hash1[hash1.merkleRoot] = hash1
-            pool2.apply_async(verify_response, args=(hash1_response,), callback=collect_result)
+            if first_response_received_t == None:
+                first_response_received_t = time.perf_counter()
+            avg_round_trip_time += time.perf_counter() - request_sent_t
+            result_objects.append(pool2.apply_async(verify_response, args=(hash1_response,)))
+        last_response_received_t = time.perf_counter()
 
-        end_t = time.perf_counter()
-
+        verification_results = [r.get() for r in result_objects]
         pool2.close()
         pool2.join()
 
+        # check if all verification passed and accumulate performance measurements
         total_sig_verify_t = 0
         total_tree_inclusion_verify_t = 0
-
         for v_result in verification_results:
             try:
                 assert v_result[0]
             except AssertionError:
                 print("Verification Failed")
-
             total_sig_verify_t += v_result[1]
             total_tree_inclusion_verify_t += v_result[2]
 
-        print("Total time on signature verification: ", round(total_sig_verify_t, 4))
-        print("Average time on signature verification: ", round(total_sig_verify_t / batch_size, 4))
-        print("Total time on merkle proof verification: ", round(total_tree_inclusion_verify_t, 4))
-        print("Average time on merkle proof verification: ", round(total_tree_inclusion_verify_t / batch_size, 4))
+        end_t = time.perf_counter()
 
-        print("Total phase1 latency: ", round(end_t - request_generated_t, 4))
-        print("Phase1 Throughput: ", round(batch_size/(end_t - request_generated_t),4))
-        print("done")
+        print("First txn/response RTT (sent out -> received): ", round(first_response_received_t - request_sent_t, 4))
+        print("Last  txn/response RTT (sent out -> received): ", round(last_response_received_t - request_sent_t, 4))
+
+        print("Average time (each txn) on signature verification: ", round(total_sig_verify_t / batch_size, 4))
+        print("Average time (each txn) on merkle proof verification: ", round(total_tree_inclusion_verify_t / batch_size, 4))
+
+        print("Total phase1 latency (all sent out -> all verified): ", round(end_t - request_sent_t, 4))
+        print("Phase1 Throughput: ", round(batch_size/(end_t - request_sent_t),4))
+
+        # for each unique hash1, ask server for its hash2
+
+        # hash1 = hash1_response.h1
+        # if hash1.merkleRoot not in unique_hash1:
+        #     unique_hash1[hash1.merkleRoot] = hash1
 
         # all_hash2_threads = []
         # for hash1 in unique_hash1.values():
