@@ -38,7 +38,7 @@ def make_transaction(key, val) -> wb.Transaction:
 
 def generate_transaction_batch(total_number) -> wb.TransactionBatch:
     pool = mp.Pool(mp.cpu_count())
-    result_objects = [pool.apply_async(make_transaction, args=(i.to_bytes(8,'big'), i.to_bytes(64,'big'))) for i in range(total_number)]
+    result_objects = [pool.apply_async(make_transaction, args=(i.to_bytes(64,'big'), i.to_bytes(64,'big'))) for i in range(total_number)]
     results = [r.get() for r in result_objects]
     pool.close()
     pool.join()
