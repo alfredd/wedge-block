@@ -36,15 +36,18 @@ def make_transaction(key, val) -> wb.Transaction:
     return wb.Transaction(rw=txn_content, signature=txn_signature)
 
 
-def generate_transaction_batch(total_number) -> wb.TransactionBatch:
+def generate_workload(total_number) -> [wb.Transaction]:
     pool = mp.Pool(mp.cpu_count())
     result_objects = [pool.apply_async(make_transaction, args=(i.to_bytes(64,'big'), i.to_bytes(64,'big'))) for i in range(total_number)]
-    results = [r.get() for r in result_objects]
+    workload = [r.get() for r in result_objects]
     pool.close()
     pool.join()
-    transaction_batch = wb.TransactionBatch(content=results)
-    return transaction_batch
+    return workload
 
+
+def transaction_stream_generator(workload: [wb.Transaction]):
+    for txn in workload:
+        yield txn
 
 def verify_response(hash1_response: wb.Hash1Response):
     ##### for hash1_response in hash1_response_batch.content:
@@ -96,7 +99,7 @@ class ClientAgent:
         start_t = time.perf_counter()
 
         batch_size = 10000
-        transaction_batch = generate_transaction_batch(batch_size)
+        workload = generate_workload(batch_size)
         request_generated_t = time.perf_counter()
         print("workload generated using: ", round(request_generated_t - start_t, 4))
 
@@ -108,7 +111,7 @@ class ClientAgent:
         request_sent_t = time.perf_counter()
         first_response_received_t = None
         avg_round_trip_time = 0
-        for hash1_response in self.stub.ExecuteBatch(transaction_batch):
+        for hash1_response in self.stub.ExecuteBatch(transaction_stream_generator(workload)):
             if first_response_received_t == None:
                 first_response_received_t = time.perf_counter()
             avg_round_trip_time += time.perf_counter() - request_sent_t
