@@ -46,18 +46,17 @@ class EdgeService(wbgrpc.EdgeNodeServicer):
     def Execute(self, request: wb.Transaction, context):
         raise NotImplementedError
 
-    def ExecuteBatch(self, txn_iterator, context):
+    def ExecuteBatch(self, request: [(wb.Transaction)], context):
+        workload_size = len(request.content)
+
         # verify all signatures are correct (parallel)
         pool = mp.Pool(mp.cpu_count())
         result_objects = []
-        workload = []
 
         sig_verification_start_t = time.perf_counter()
-        for txn in txn_iterator:
-            workload.append(txn)
+        for txn in request.content:
             result_objects.append(pool.apply_async(verify_sig, args=(txn,)))
         verification_results = [r.get() for r in result_objects]
-        workload_size = len(workload)
 
         total_sig_verify_t = 0
         for v_result in verification_results:
@@ -74,7 +73,7 @@ class EdgeService(wbgrpc.EdgeNodeServicer):
         batch_signing_avg = 0
 
         for batch_n in range(workload_size//self.batch_size + 1):
-            batch = workload[batch_n*self.batch_size:(batch_n+1)*self.batch_size]
+            batch = request.content[batch_n*self.batch_size:(batch_n+1)*self.batch_size]
             if (len(batch) == 0):
                 batch_n -= 1
                 break

@@ -19,9 +19,9 @@ class EdgeNodeStub(object):
                 request_serializer=wedgeblock__pb2.Transaction.SerializeToString,
                 response_deserializer=wedgeblock__pb2.Hash1Response.FromString,
                 )
-        self.ExecuteBatch = channel.stream_stream(
+        self.ExecuteBatch = channel.unary_stream(
                 '/wedgeblock.EdgeNode/ExecuteBatch',
-                request_serializer=wedgeblock__pb2.Transaction.SerializeToString,
+                request_serializer=wedgeblock__pb2.TransactionBatch.SerializeToString,
                 response_deserializer=wedgeblock__pb2.Hash1Response.FromString,
                 )
         self.GetPhase2Hash = channel.unary_unary(
@@ -40,7 +40,7 @@ class EdgeNodeServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def ExecuteBatch(self, request_iterator, context):
+    def ExecuteBatch(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -60,9 +60,9 @@ def add_EdgeNodeServicer_to_server(servicer, server):
                     request_deserializer=wedgeblock__pb2.Transaction.FromString,
                     response_serializer=wedgeblock__pb2.Hash1Response.SerializeToString,
             ),
-            'ExecuteBatch': grpc.stream_stream_rpc_method_handler(
+            'ExecuteBatch': grpc.unary_stream_rpc_method_handler(
                     servicer.ExecuteBatch,
-                    request_deserializer=wedgeblock__pb2.Transaction.FromString,
+                    request_deserializer=wedgeblock__pb2.TransactionBatch.FromString,
                     response_serializer=wedgeblock__pb2.Hash1Response.SerializeToString,
             ),
             'GetPhase2Hash': grpc.unary_unary_rpc_method_handler(
@@ -98,7 +98,7 @@ class EdgeNode(object):
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
-    def ExecuteBatch(request_iterator,
+    def ExecuteBatch(request,
             target,
             options=(),
             channel_credentials=None,
@@ -108,8 +108,8 @@ class EdgeNode(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.stream_stream(request_iterator, target, '/wedgeblock.EdgeNode/ExecuteBatch',
-            wedgeblock__pb2.Transaction.SerializeToString,
+        return grpc.experimental.unary_stream(request, target, '/wedgeblock.EdgeNode/ExecuteBatch',
+            wedgeblock__pb2.TransactionBatch.SerializeToString,
             wedgeblock__pb2.Hash1Response.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

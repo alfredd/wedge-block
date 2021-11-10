@@ -7,7 +7,7 @@ python3 -m grpc_tools.protoc -I./ --python_out=. --grpc_python_out=. wedgeblock.
 
 service EdgeNode {
     rpc Execute (Transaction) returns (Hash1Response);
-    rpc ExecuteBatch (stream Transaction) returns (stream Hash1Response);
+    rpc ExecuteBatch (TransactionBatch) returns (stream Hash1Response);
     rpc GetPhase2Hash (LogHash) returns (Hash2);
 }
 
@@ -20,6 +20,10 @@ message RWSet {
 message Transaction {
     RWSet rw = 1;
     bytes signature = 2;
+}
+
+message TransactionBatch {
+    repeated Transaction content = 1;
 }
 
 enum TxnType {
