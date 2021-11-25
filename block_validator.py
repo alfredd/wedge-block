@@ -8,26 +8,18 @@ class BlockValidator():
     def __init__(self):
         self.r = RopEth()
         self.m = Lock()
-        pass
 
-    def insert_to_verify(self, txnHash, merkleRoot, logIndex, callback):
+    def thread_safe_verify(self, txn_hash, merkle_root, log_index):
         self.m.acquire()
-        self.verify(txnHash, merkleRoot, logIndex, callback)
+        self.verify(txn_hash, merkle_root, log_index)
         self.m.release()
 
-    def verify(self, txnHash, expectedMerkleRoot, expectedLogIndex, callback):
-        message = self.r.getInputMessageForTxn(txnHash)
+    def verify(self, txn_hash, expected_merkleRoot, expected_logIndex):
+        message = self.r.getInputMessageForTxn(txn_hash)
         blockchain_record = pickle.loads(codecs.decode(message.encode(), "base64"))
-        logindex = None
-        merkleroot = None
-        if expectedLogIndex in blockchain_record:
-            logindex = expectedLogIndex
-            merkleroot = blockchain_record[expectedLogIndex]
-        callback(txnHash, (expectedMerkleRoot, expectedLogIndex), (merkleroot, logindex))
-
-
-class CallBackValidator():
-    def call_back(self, txnHash, expected, actual):
-        # print("checking callback for txnHash %s." %txnHash)
-        assert expected[0]==actual[0]
-        assert expected[1]==actual[1]
+        if expected_logIndex in blockchain_record:
+            recordedMerkleroot = blockchain_record[expected_logIndex]
+            if expected_merkleRoot != recordedMerkleroot:
+                raise Exception('Hash2 verification failed. Blockchain transaction {} recorded a different merkleroot: {}.'.format(txn_hash, recordedMerkleroot))
+        else:
+            raise Exception('Hash2 verification failed. Blockchain transaction {} does not include log index {}.'.format(txn_hash, expected_logIndex))

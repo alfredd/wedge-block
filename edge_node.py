@@ -126,16 +126,21 @@ class EdgeNode:
         self.hash2_manager_lock = threading.Lock()
         self.hash2_manager_thread = threading.Thread(target=self.hash2_manager, name="hash2_manager_thread",
                                                      daemon=True)
+        self.total_gas_spent = 0
+        self.total_h2_waiting_time = 0
 
     def hash2_manager(self):
-        print("hash2 manager invoked \n")
+        print("[H2]: hash2 manager invoked \n")
         while len(self.hash2_waiting_list) != 0:
             time.sleep(5)
-            print("hash2 manager updating contract \n")
+            print("[H2]: hash2 manager updating contract \n")
             self.hash2_manager_lock.acquire()
             waiting_indexes = list(self.hash2_waiting_list.keys())
+            print("[H2]: Writing {} index/merkleRoot pairs to public blockchain".format(len(waiting_indexes)))
+            hash2_request_sent = time.perf_counter()
             data_to_eth = codecs.encode(pickle.dumps(self.hash2_waiting_list), "base64").decode()
             txn_hash = self.eth_connector.updateContractData(data_to_eth)
+
             self.hash2_waiting_list.clear()
             self.hash2_manager_lock.release()
             # waiting for eth to write into a block
@@ -145,15 +150,23 @@ class EdgeNode:
                 eth_response = self.eth_connector.getTransactionReciept(txn_hash)
                 if eth_response is not None:
                     assert txn_hash == eth_response['transactionHash']
-                    # print(waiting_indexes)
+
+                    self.total_gas_spent += eth_response['gasUsed']
+                    hash2_response_waiting_time = round(time.perf_counter() - hash2_request_sent,4)
+                    self.total_h2_waiting_time += hash2_response_waiting_time
+                    print("[H2]: Hash2 response for {} log indexes is received after {} seconds."
+                          .format(len(waiting_indexes), hash2_response_waiting_time, 4))
+                    print("[H2]: Total waiting time  used so far: ", self.total_h2_waiting_time)
+                    print("[H2]: Total gas used so far          : ", self.total_gas_spent)
+
                     for index in waiting_indexes:
                         self.kernel.update_hash2(index, txn_hash)
                         self.analyser.history[index].hash2_received = time.perf_counter()
                         # print(self.analyser.history[index])
-                        # print("Phase2 complete: \n", self.kernel.get_log_entry(index))
-                        # print("Time analysis: \n", self.analyser.history[index], "\n")
+                        # print("Phase2 complete: ", self.kernel.get_log_entry(index))
+                        # print("Time analysis: ", self.analyser.history[index])
                     break
-        print("hash2 manager exit \n")
+        print("[H2]: hash2 manager exit \n")
 
     def process_txn_batch(self, txn_batch: [(wedgeblock_pb2.Transaction)]) -> [wedgeblock_pb2.Hash1]:
         # Input: list of transactions to be added into the log
@@ -182,7 +195,7 @@ class EdgeNode:
         if not self.hash2_manager_thread.is_alive():
             self.hash2_manager_thread = threading.Thread(target=self.hash2_manager, name="hash2_manager_thread",
                                                          daemon=True)
-            # self.hash2_manager_thread.start()
+            self.hash2_manager_thread.start()
 
         # log entry is added to the log
         tree = log_entry.merkle_tree

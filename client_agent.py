@@ -9,7 +9,7 @@ import time
 import multiprocessing as mp
 import threading
 
-from block_validator import BlockValidator, CallBackValidator
+from block_validator import BlockValidator
 
 import wedgeblock_pb2_grpc as wbgrpc
 import wedgeblock_pb2 as wb
@@ -74,8 +74,7 @@ class ClientAgent:
     def __init__(self):
         self.stub = None
         self.bc_block_validator = BlockValidator()
-        self.hash2_checking_interval = 2
-        self.performance_monitor = None
+        self.hash2_checking_interval = 5
 
     def _check_hash2(self, hash1: wb.Hash1):
         logHash = wb.LogHash(logIndex=hash1.logIndex, merkleRoot=hash1.merkleRoot.encode())
@@ -87,8 +86,7 @@ class ClientAgent:
         while hash2.status is not wb.Hash2Status.VALID:
             hash2 = self.stub.GetPhase2Hash(logHash)
             time.sleep(self.hash2_checking_interval)
-        cb = CallBackValidator()
-        self.bc_block_validator.insert_to_verify(hash2.TxnHash, hash1.merkleRoot, hash1.logIndex, cb.call_back)
+        self.bc_block_validator.thread_safe_verify(hash2.TxnHash, hash1.merkleRoot, hash1.logIndex)
 
     def run(self, stub: wbgrpc.EdgeNodeStub):
         self.stub = stub
@@ -99,7 +97,7 @@ class ClientAgent:
         request_generated_t = time.perf_counter()
         print("workload generated using: ", round(request_generated_t - start_t, 4))
 
-        unique_hash1 = dict()
+        received_unique_hash1 = dict()
 
         pool2 = mp.Pool(mp.cpu_count())
         result_objects = []
@@ -112,6 +110,9 @@ class ClientAgent:
                 first_response_received_t = time.perf_counter()
             avg_round_trip_time += time.perf_counter() - request_sent_t
             result_objects.append(pool2.apply_async(verify_response, args=(hash1_response,)))
+            # extract unique hash1s for hash2 queries
+            if hash1_response.h1.logIndex not in received_unique_hash1:
+                received_unique_hash1[hash1_response.h1.logIndex] = hash1_response.h1
         last_response_received_t = time.perf_counter()
 
         verification_results = [r.get() for r in result_objects]
@@ -141,19 +142,15 @@ class ClientAgent:
         print("Phase1 Throughput: ", round(batch_size/(end_t - request_sent_t),4))
 
         # for each unique hash1, ask server for its hash2
+        hash2_verify_start = time.perf_counter()
+        all_hash2_threads = []
+        for k,hash1 in received_unique_hash1.items():
+            thread = threading.Thread(target=self._check_hash2, args=(hash1,))
+            all_hash2_threads.append(thread)
+            thread.start()
 
-        # hash1 = hash1_response.h1
-        # if hash1.merkleRoot not in unique_hash1:
-        #     unique_hash1[hash1.merkleRoot] = hash1
-
-        # all_hash2_threads = []
-        # for hash1 in unique_hash1.values():
-        #     thread = threading.Thread(target=self._check_hash2, args=(hash1,))
-        #     all_hash2_threads.append(thread)
-        #     thread.start()
-        #
-        # for thread in all_hash2_threads:
-        #     thread.join()
-        #     self.performance_monitor.mark_phase2_complete()
-
+        for thread in all_hash2_threads:
+            thread.join()
+        hash2_verify_end = time.perf_counter()
+        print("Total phase2 latency (all hash2 verified): ", round(hash2_verify_end - hash2_verify_start, 4))
         return

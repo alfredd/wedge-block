@@ -42,11 +42,13 @@ class EdgeService(wbgrpc.EdgeNodeServicer):
     def __init__(self):
         self.edge_node = edge_node.EdgeNode()
         self.batch_size = 1000
+        self.total_service_time = 0
 
     def Execute(self, request: wb.Transaction, context):
         raise NotImplementedError
 
     def ExecuteBatch(self, request: [(wb.Transaction)], context):
+        function_start = time.perf_counter()
         workload_size = len(request.content)
 
         # verify all signatures are correct (parallel)
@@ -102,6 +104,10 @@ class EdgeService(wbgrpc.EdgeNodeServicer):
 
         pool.close()
         pool.join()
+
+        function_end = time.perf_counter()
+        self.total_service_time += function_end - function_start
+        print("[EdgeNode (H1): ]Total Service time so far: ", round(self.total_service_time,4))
 
     def GetPhase2Hash(self, request: wb.LogHash, context):
         if not self.edge_node.entry_exist_at_index(request.logIndex):
