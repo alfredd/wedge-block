@@ -1,12 +1,16 @@
 #!/bin/bash
 
+folder="client_records_1000_1024"
+n_clients=3
 
-for i in {1..3}
+rm ${folder}/*
+
+for ((i=0; i<${n_clients}; i++));
 do 
 	echo running client Num "$i"
-	python3 client.py > "client_records/C_record_${i}.txt" &
+	python3 client.py > "${folder}/C_record_${i}.txt" &
 	pids[$i]=$!
-	sleep 10s
+	sleep 8s
 done
 
 for pid in ${pids[*]}
@@ -14,3 +18,8 @@ do
     wait $pid
 done
 
+for ((i=0; i<${n_clients}; i++));
+do
+	cat ${folder}/C_record_${i}.txt
+	echo
+done

@@ -48,25 +48,31 @@ def generate_transaction_batch(total_number) -> wb.TransactionBatch:
 def verify_response(hash1_response: wb.Hash1Response):
     ##### for hash1_response in hash1_response_batch.content:
     # verify the signature is correct
-    sig_verify_start = time.perf_counter()
+    global verifier
 
+    sig_verify_start = time.perf_counter()
+    
     hash1 = hash1_response.h1
     response_signature = hash1_response.signature
     received_response_hash = SHA256.new(hash1.SerializeToString())
+    '''
     try:
         verifier.verify(received_response_hash, response_signature)
     except ValueError:
         return (False, 0, 0)
-
+    '''
     sig_verify_time = time.perf_counter() - sig_verify_start
 
     # verify the merkle proof is correct
     tree_inclusion_verify_start = time.perf_counter()
+	
+    
     merkle_proof = pickle.loads(hash1.merkleProof)  # deserialize
     data = (hash1_response.h1.rw.key, hash1_response.h1.rw.val)  # data to be verified
     if not merklelib.verify_leaf_inclusion(data, merkle_proof, hash_func, hash1.merkleRoot):
         return (False, 0, 0)
     tree_inclusion_verify_time = time.perf_counter() - tree_inclusion_verify_start
+    
     return (True, sig_verify_time, tree_inclusion_verify_time)
 
 
@@ -89,17 +95,25 @@ class ClientAgent:
         self.bc_block_validator.thread_safe_verify(hash2.TxnHash, hash1.merkleRoot, hash1.logIndex)
 
     def run(self, stub: wbgrpc.EdgeNodeStub):
+        pool = mp.Pool(mp.cpu_count())
         self.stub = stub
         start_t = time.perf_counter()
 
         batch_size = 10000
-        transaction_batch = generate_transaction_batch(batch_size)
+        
+        # transaction_batch = generate_transaction_batch(batch_size)
+        
+        result_objects = []
+        for i in range(batch_size):
+            result_objects.append(pool.apply_async(make_transaction, args=(i.to_bytes(64, 'big'), i.to_bytes(1024, 'big'))))
+        workload = [r.get() for r in result_objects]
+        transaction_batch = wb.TransactionBatch(content=workload)
+
         request_generated_t = time.perf_counter()
         print("workload generated using: ", round(request_generated_t - start_t, 4))
 
         received_unique_hash1 = dict()
 
-        pool2 = mp.Pool(mp.cpu_count())
         result_objects = []
         # send #batch_size many transactions to the edge node
         request_sent_t = time.perf_counter()
@@ -109,15 +123,15 @@ class ClientAgent:
             if first_response_received_t == None:
                 first_response_received_t = time.perf_counter()
             avg_round_trip_time += time.perf_counter() - request_sent_t
-            result_objects.append(pool2.apply_async(verify_response, args=(hash1_response,)))
+            result_objects.append(pool.apply_async(verify_response, args=(hash1_response,)))
             # extract unique hash1s for hash2 queries
             if hash1_response.h1.logIndex not in received_unique_hash1:
                 received_unique_hash1[hash1_response.h1.logIndex] = hash1_response.h1
         last_response_received_t = time.perf_counter()
 
         verification_results = [r.get() for r in result_objects]
-        pool2.close()
-        pool2.join()
+        pool.close()
+        pool.join()
 
         # check if all verification passed and accumulate performance measurements
         total_sig_verify_t = 0

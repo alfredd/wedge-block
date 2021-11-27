@@ -119,7 +119,8 @@ class EdgeService(wbgrpc.EdgeNodeServicer):
 
 
 def serve():
-    options = [('grpc.max_receive_message_length', 1024 * 1024 * 1024)]
+    options = [('grpc.max_receive_message_length', 1024 * 1024 * 1024),
+               ('grpc.http2.max_ping_strikes, 0')]
     server = grpc.server(ThreadPoolExecutor(max_workers=10), options=options)
     wbgrpc.add_EdgeNodeServicer_to_server(
         EdgeService(), server)
