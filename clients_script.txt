@@ -1,6 +1,6 @@
 #!/bin/bash
 
-folder="client_records_2000_4096"
+folder="client_records_500_1024"
 n_clients=100
 
 rm ${folder}/*

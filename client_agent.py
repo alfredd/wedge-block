@@ -34,16 +34,6 @@ def make_transaction(key, val) -> wb.Transaction:
     txn_content_hash = SHA256.new(txn_content.SerializeToString())
     txn_signature = signer.sign(txn_content_hash)
     return wb.Transaction(rw=txn_content, signature=txn_signature)
-'''
-def generate_transaction_batch(total_number) -> wb.TransactionBatch:
-    pool = mp.Pool(mp.cpu_count())
-    result_objects = [pool.apply_async(make_transaction, args=(i.to_bytes(64,'big'), i.to_bytes(4096,'big'))) for i in range(total_number)]
-    workload = [r.get() for r in result_objects]
-    pool.close()
-    pool.join()
-    transaction_batch = wb.TransactionBatch(content=workload)
-    return transaction_batch
-'''
 
 def verify_response(hash1_response: wb.Hash1Response):
     ##### for hash1_response in hash1_response_batch.content:
@@ -103,7 +93,7 @@ class ClientAgent:
         
         result_objects = []
         for i in range(batch_size):
-            result_objects.append(pool.apply_async(make_transaction, args=(i.to_bytes(64, 'big'), i.to_bytes(4096, 'big'))))
+            result_objects.append(pool.apply_async(make_transaction, args=(i.to_bytes(64, 'big'), i.to_bytes(1024, 'big'))))
         workload = [r.get() for r in result_objects]
         transaction_batch = wb.TransactionBatch(content=workload)
 
