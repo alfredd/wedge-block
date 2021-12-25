@@ -13,6 +13,7 @@ class BlockValidator():
         self.m.release()
 
     def verify(self, txn_hash, expected_merkleRoot, expected_logIndex):
+        expected_logIndex = str(expected_logIndex)
         message = self.r.getInputMessageForTxn(txn_hash)
         blockchain_record = json.loads(message)
         if expected_logIndex in blockchain_record:

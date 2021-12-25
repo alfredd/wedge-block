@@ -122,7 +122,7 @@ class EdgeNode:
         self.eth_connector = RopEth()
         self.analyser = EdgeNodeAnalyser()
 
-        self.hash2_waiting_list = dict()
+        self.hash2_waiting_buffer = dict()
         self.hash2_manager_lock = threading.Lock()
         self.hash2_manager_thread = threading.Thread(target=self.hash2_manager, name="hash2_manager_thread",
                                                      daemon=True)
@@ -131,17 +131,17 @@ class EdgeNode:
 
     def hash2_manager(self):
         print("[H2]: hash2 manager invoked \n")
-        while len(self.hash2_waiting_list) != 0:
+        while len(self.hash2_waiting_buffer) != 0:
             time.sleep(5)
             print("[H2]: hash2 manager updating contract \n")
             self.hash2_manager_lock.acquire()
-            waiting_indexes = list(self.hash2_waiting_list.keys())
+            waiting_indexes = list(self.hash2_waiting_buffer.keys())
             print("[H2]: Writing {} index/merkleRoot pairs to public blockchain".format(len(waiting_indexes)))
             hash2_request_sent = time.perf_counter()
-            data_to_eth = json.dumps(self.hash2_waiting_list)
+            data_to_eth = json.dumps(self.hash2_waiting_buffer)
             txn_hash = self.eth_connector.updateContractData(data_to_eth)
 
-            self.hash2_waiting_list.clear()
+            self.hash2_waiting_buffer.clear()
             self.hash2_manager_lock.release()
             # waiting for eth to write into a block
             while True:
@@ -189,7 +189,7 @@ class EdgeNode:
         self.analyser.add_new_time_record(log_index, time_record)
 
         self.hash2_manager_lock.acquire()
-        self.hash2_waiting_list[log_index] = log_entry.merkle_tree.merkle_root
+        self.hash2_waiting_buffer[log_index] = log_entry.merkle_tree.merkle_root
         self.hash2_manager_lock.release()
         if not self.hash2_manager_thread.is_alive():
             self.hash2_manager_thread = threading.Thread(target=self.hash2_manager, name="hash2_manager_thread",
