@@ -10,8 +10,8 @@ def run():
 
     # print("Running client")
     options = [('grpc.max_receive_message_length', 1024 * 1024 * 1024)]
-    with grpc.insecure_channel('10.52.2.128:50051', options = options) as channel:
-    # with grpc.insecure_channel('localhost:50051', options = options) as channel:
+    # with grpc.insecure_channel('10.52.2.128:50051', options = options) as channel:
+    with grpc.insecure_channel('localhost:50051', options = options) as channel:
         stub = wbgrpc.EdgeNodeStub(channel)
         ClientAgent().run(stub)
 

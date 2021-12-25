@@ -36,11 +36,9 @@ class RopEth():
         return result
 
     def getLatestData(self):
-        contract = self.w3.eth.contract(address=self.contract_address, abi=self.data["abi"])
-        print(dir(contract.functions))
-        v = contract.functions.message().call()
-        print("Latest data from contract: \n",v)
-        return v
+        if not self.contract:
+            return None
+        return self.contract.functions.message().call()
 
     def getTransactionReciept(self, txnHash):
         try:

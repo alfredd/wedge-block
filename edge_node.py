@@ -145,8 +145,7 @@ class EdgeNode:
             self.hash2_manager_lock.release()
             # waiting for eth to write into a block
             while True:
-                # check with public blockchain to see if transaction is committed every 5 seconds
-                time.sleep(5)
+                # check with public blockchain to see if transaction is committed
                 eth_response = self.eth_connector.getTransactionReciept(txn_hash)
                 if eth_response is not None:
                     assert txn_hash == eth_response['transactionHash']
