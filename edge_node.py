@@ -138,7 +138,7 @@ class EdgeNode:
             waiting_indexes = list(self.hash2_waiting_list.keys())
             print("[H2]: Writing {} index/merkleRoot pairs to public blockchain".format(len(waiting_indexes)))
             hash2_request_sent = time.perf_counter()
-            data_to_eth = codecs.encode(pickle.dumps(self.hash2_waiting_list), "base64").decode()
+            data_to_eth = json.dumps(self.hash2_waiting_list)
             txn_hash = self.eth_connector.updateContractData(data_to_eth)
 
             self.hash2_waiting_list.clear()

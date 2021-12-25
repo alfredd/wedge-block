@@ -20,11 +20,10 @@ class RopEth():
     def updateContractData(self, data):
         # Executing a transaction.
         nonce = self.w3.eth.get_transaction_count(self.wallet_address)
-        message = data
-        estimatedGas = self.contract.functions.update(message).estimateGas()
+        estimatedGas = self.contract.functions.update(data).estimateGas()
         # print("Estimated gas to execute the transaction: ",estimatedGas)
         # print(dir(self.contract.functions.update(message)))
-        txn_dict = self.contract.functions.update(message).buildTransaction({
+        txn_dict = self.contract.functions.update(data).buildTransaction({
             'gas': estimatedGas,
             'from': self.wallet_address,
             'nonce': nonce,
@@ -40,7 +39,7 @@ class RopEth():
         contract = self.w3.eth.contract(address=self.contract_address, abi=self.data["abi"])
         print(dir(contract.functions))
         v = contract.functions.message().call()
-        print("Latest data from contract: ",v)
+        print("Latest data from contract: \n",v)
         return v
 
     def getTransactionReciept(self, txnHash):
