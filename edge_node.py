@@ -130,11 +130,21 @@ class EdgeNode:
         self.total_h2_waiting_time = 0
 
     def hash2_manager(self):
+        # Ropsten Eth transaction cannot be processed if its size is too large (max gas allowance exceeded)
+        # therefore we set a upper bound to how many hash1 proofs are sent onchain in one transaction
+        buffer_threshold = 250
         print("[H2]: hash2 manager invoked \n")
         while len(self.hash2_waiting_buffer) != 0:
             time.sleep(5)
             print("[H2]: hash2 manager updating contract \n")
             self.hash2_manager_lock.acquire()
+            # a temp buffer is used to hold extra hash1 proofs
+            temp_buffer = None
+            if len(self.hash2_waiting_buffer) > buffer_threshold:
+                temp = list(self.hash2_waiting_buffer.items())
+                self.hash2_waiting_buffer = dict(temp[:buffer_threshold])
+                temp_buffer = dict(temp[buffer_threshold:])
+
             waiting_indexes = list(self.hash2_waiting_buffer.keys())
             print("[H2]: Writing {} index/merkleRoot pairs to public blockchain".format(len(waiting_indexes)))
             hash2_request_sent = time.perf_counter()
@@ -142,6 +152,8 @@ class EdgeNode:
             txn_hash = self.eth_connector.updateContractData(data_to_eth)
 
             self.hash2_waiting_buffer.clear()
+            if temp_buffer is not None:
+                    self.hash2_waiting_buffer = temp_buffer
             self.hash2_manager_lock.release()
             # waiting for eth to write into a block
             while True:
