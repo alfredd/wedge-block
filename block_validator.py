@@ -1,8 +1,6 @@
 from ropsten_connector import RopEth
 from threading import Lock
-import pickle
-import codecs
-
+import json
 
 class BlockValidator():
     def __init__(self):
@@ -16,7 +14,7 @@ class BlockValidator():
 
     def verify(self, txn_hash, expected_merkleRoot, expected_logIndex):
         message = self.r.getInputMessageForTxn(txn_hash)
-        blockchain_record = pickle.loads(codecs.decode(message.encode(), "base64"))
+        blockchain_record = json.loads(message)
         if expected_logIndex in blockchain_record:
             recordedMerkleroot = blockchain_record[expected_logIndex]
             if expected_merkleRoot != recordedMerkleroot:
