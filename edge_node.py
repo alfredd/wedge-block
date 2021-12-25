@@ -132,7 +132,7 @@ class EdgeNode:
     def hash2_manager(self):
         # Ropsten Eth transaction cannot be processed if its size is too large (max gas allowance exceeded)
         # therefore we set a upper bound to how many hash1 proofs are sent onchain in one transaction
-        buffer_threshold = 250
+        buffer_threshold = 200
         print("[H2]: hash2 manager invoked \n")
         while len(self.hash2_waiting_buffer) != 0:
             time.sleep(5)
