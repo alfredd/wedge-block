@@ -25,7 +25,7 @@ def hash_func(value):
     return hashlib.sha256(value).hexdigest()
 
 
-def make_transaction(key, val) -> wb.Transaction:
+def make_transaction(key, val, seq) -> wb.Transaction:
     global signer
     if type(key) is str and type(val) is str:
         key = str.encode(key)
@@ -33,9 +33,9 @@ def make_transaction(key, val) -> wb.Transaction:
     txn_content = wb.RWSet(type=wb.TxnType.RW, key=key, val=val)
     txn_content_hash = SHA256.new(txn_content.SerializeToString())
     txn_signature = signer.sign(txn_content_hash)
-    return wb.Transaction(rw=txn_content, signature=txn_signature)
+    return wb.Transaction(rw=txn_content, signature=txn_signature, sequenceNumber=seq)
 
-def verify_response(hash1_response: wb.Hash1Response):
+def verify_response(hash1_response: wb.Hash1Response, original_transaction: wb.Transaction):
     ##### for hash1_response in hash1_response_batch.content:
     # verify the signature is correct
     global verifier
@@ -53,10 +53,9 @@ def verify_response(hash1_response: wb.Hash1Response):
 
     # verify the merkle proof is correct
     tree_inclusion_verify_start = time.perf_counter()
-	
-    
+
     merkle_proof = pickle.loads(hash1.merkleProof)  # deserialize
-    data = (hash1_response.h1.rw.key, hash1_response.h1.rw.val)  # data to be verified
+    data = (original_transaction.rw.key, original_transaction.rw.val, original_transaction.sequenceNumber)  # data to be verified
     if not merklelib.verify_leaf_inclusion(data, merkle_proof, hash_func, hash1.merkleRoot):
         return (False, 0, 0)
     tree_inclusion_verify_time = time.perf_counter() - tree_inclusion_verify_start
@@ -93,7 +92,7 @@ class ClientAgent:
         
         result_objects = []
         for i in range(batch_size):
-            result_objects.append(pool.apply_async(make_transaction, args=(i.to_bytes(64, 'big'), i.to_bytes(1024, 'big'))))
+            result_objects.append(pool.apply_async(make_transaction, args=(i.to_bytes(64, 'big'), i.to_bytes(1024, 'big'),i)))
         workload = [r.get() for r in result_objects]
         transaction_batch = wb.TransactionBatch(content=workload)
 
@@ -107,14 +106,17 @@ class ClientAgent:
         request_sent_t = time.perf_counter()
         first_response_received_t = None
         avg_round_trip_time = 0
+        sequenceNumber = 0
         for hash1_response in self.stub.ExecuteBatch(transaction_batch):
             if first_response_received_t == None:
                 first_response_received_t = time.perf_counter()
             avg_round_trip_time += time.perf_counter() - request_sent_t
-            result_objects.append(pool.apply_async(verify_response, args=(hash1_response,)))
+            result_objects.append(pool.apply_async(verify_response, args=(hash1_response, workload[sequenceNumber])))
             # extract unique hash1s for hash2 queries
+            # several hash1s might have been placed in the same bc txn thus sharing same hash2
             if hash1_response.h1.logIndex not in received_unique_hash1:
                 received_unique_hash1[hash1_response.h1.logIndex] = hash1_response.h1
+            sequenceNumber += 1
         last_response_received_t = time.perf_counter()
 
         verification_results = [r.get() for r in result_objects]

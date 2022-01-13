@@ -192,7 +192,7 @@ class EdgeNode:
         time_record.batch_size = len(txn_batch)
         time_record.process_start = time.perf_counter()  # first measurement
 
-        entry_content = [(txn.rw.key, txn.rw.val) for txn in txn_batch]
+        entry_content = [(txn.rw.key, txn.rw.val, txn.sequenceNumber) for txn in txn_batch]
         log_index = self.kernel.add_entry(entry_content)
         log_entry = self.kernel.get_log_entry(log_index)
 
@@ -213,7 +213,7 @@ class EdgeNode:
         root = tree.merkle_root
         hash1_list = []
         for txn in txn_batch:
-            txn_id = (txn.rw.key, txn.rw.val)
+            txn_id = (txn.rw.key, txn.rw.val, txn.sequenceNumber)
             proof = tree.get_proof(txn_id)
             proof_pickle = pickle.dumps(proof)
             hash1 = wedgeblock_pb2.Hash1(logIndex=log_index, rw=txn.rw, merkleRoot=root, merkleProof=proof_pickle)

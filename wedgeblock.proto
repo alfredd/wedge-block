@@ -20,6 +20,7 @@ message RWSet {
 message Transaction {
     RWSet rw = 1;
     bytes signature = 2;
+    int32 sequenceNumber = 3;
 }
 
 message TransactionBatch {
