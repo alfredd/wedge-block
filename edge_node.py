@@ -148,8 +148,8 @@ class EdgeNode:
             waiting_indexes = list(self.hash2_waiting_buffer.keys())
             print("[H2]: Writing {} index/merkleRoot pairs to public blockchain".format(len(waiting_indexes)))
             hash2_request_sent = time.perf_counter()
-            data_to_eth = json.dumps(self.hash2_waiting_buffer)
-            txn_hash = self.eth_connector.updateContractData(data_to_eth)
+            merkle_roots = list(self.hash2_waiting_buffer.values())
+            txn_hash = self.eth_connector.updateContractData(merkle_roots, waiting_indexes[0], waiting_indexes[-1])
 
             self.hash2_waiting_buffer.clear()
             if temp_buffer is not None:
@@ -158,7 +158,7 @@ class EdgeNode:
             # waiting for eth to write into a block
             while True:
                 # check with public blockchain to see if transaction is committed
-                eth_response = self.eth_connector.getTransactionReciept(txn_hash)
+                eth_response = self.eth_connector.getTransactionReceipt(txn_hash)
                 if eth_response is not None:
                     assert txn_hash == eth_response['transactionHash']
 

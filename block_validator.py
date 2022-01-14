@@ -14,10 +14,11 @@ class BlockValidator():
 
     def verify(self, txn_hash, expected_merkleRoot, expected_logIndex):
         expected_logIndex = str(expected_logIndex)
-        message = self.r.getInputMessageForTxn(txn_hash)
-        blockchain_record = json.loads(message)
-        if expected_logIndex in blockchain_record:
-            recordedMerkleroot = blockchain_record[expected_logIndex]
+        roots, startIndex = self.r.getInputMessageForTxn(txn_hash)
+        # blockchain_record = json.loads(message)
+        target_index = int(expected_logIndex) - startIndex
+        if (target_index >= 0 and target_index < len(roots)):
+            recordedMerkleroot = roots[target_index]
             if expected_merkleRoot != recordedMerkleroot:
                 raise Exception('Hash2 verification failed. Blockchain transaction {} recorded a different merkleroot: {}.'.format(txn_hash, recordedMerkleroot))
         else:
