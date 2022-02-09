@@ -31,12 +31,12 @@ def make_transaction(key, val, seq) -> wb.Transaction:
         key = str.encode(key)
         val = str.encode(val)
     txn_content = wb.RWSet(type=wb.TxnType.RW, key=key, val=val)
-    txn_content_hash = SHA256.new(txn_content.SerializeToString())
+    txn_content_hash = SHA256.new(txn_content.SerializeToString())  # why not use hash_func(txn_content.)
     txn_signature = signer.sign(txn_content_hash)
     return wb.Transaction(rw=txn_content, signature=txn_signature, sequenceNumber=seq)
 
+
 def verify_response(hash1_response: wb.Hash1Response, original_transaction: wb.Transaction):
-    ##### for hash1_response in hash1_response_batch.content:
     # verify the signature is correct
     global verifier
 
@@ -55,7 +55,8 @@ def verify_response(hash1_response: wb.Hash1Response, original_transaction: wb.T
     tree_inclusion_verify_start = time.perf_counter()
 
     merkle_proof = pickle.loads(hash1.merkleProof)  # deserialize
-    data = (original_transaction.rw.key, original_transaction.rw.val, original_transaction.sequenceNumber)  # data to be verified
+    # data to be verified
+    data = (original_transaction.rw.key, original_transaction.rw.val, original_transaction.sequenceNumber)
     if not merklelib.verify_leaf_inclusion(data, merkle_proof, hash_func, hash1.merkleRoot):
         return (False, 0, 0)
     tree_inclusion_verify_time = time.perf_counter() - tree_inclusion_verify_start
@@ -70,14 +71,14 @@ class ClientAgent:
         self.hash2_checking_interval = 5
 
     def _check_hash2(self, hash1: wb.Hash1):
-        logHash = wb.LogHash(logIndex=hash1.logIndex, merkleRoot=hash1.merkleRoot.encode())
-        hash2 = self.stub.GetPhase2Hash(logHash)
+        log_hash = wb.LogHash(logIndex=hash1.logIndex, merkleRoot=hash1.merkleRoot.encode())
+        hash2 = self.stub.GetPhase2Hash(log_hash)
         if hash2.status is wb.Hash2Status.INVALID:
             # raise Exception
-            raise Exception("logHash ", logHash, " is invalid")
+            raise Exception("logHash ", log_hash, " is invalid")
 
         while hash2.status is not wb.Hash2Status.VALID:
-            hash2 = self.stub.GetPhase2Hash(logHash)
+            hash2 = self.stub.GetPhase2Hash(log_hash)
             time.sleep(self.hash2_checking_interval)
         self.bc_block_validator.thread_safe_verify(hash2.TxnHash, hash1.merkleRoot, hash1.logIndex)
 
@@ -92,7 +93,8 @@ class ClientAgent:
         
         result_objects = []
         for i in range(batch_size):
-            result_objects.append(pool.apply_async(make_transaction, args=(i.to_bytes(64, 'big'), i.to_bytes(1024, 'big'),i)))
+            result_objects.append(pool.apply_async(make_transaction,
+                                                   args=(i.to_bytes(64, 'big'), i.to_bytes(1024, 'big'), i)))
         workload = [r.get() for r in result_objects]
         transaction_batch = wb.TransactionBatch(content=workload)
 
@@ -106,17 +108,17 @@ class ClientAgent:
         request_sent_t = time.perf_counter()
         first_response_received_t = None
         avg_round_trip_time = 0
-        sequenceNumber = 0
+        sequence_number = 0
         for hash1_response in self.stub.ExecuteBatch(transaction_batch):
-            if first_response_received_t == None:
+            if first_response_received_t is None:
                 first_response_received_t = time.perf_counter()
             avg_round_trip_time += time.perf_counter() - request_sent_t
-            result_objects.append(pool.apply_async(verify_response, args=(hash1_response, workload[sequenceNumber])))
+            result_objects.append(pool.apply_async(verify_response, args=(hash1_response, workload[sequence_number])))
             # extract unique hash1s for hash2 queries
             # several hash1s might have been placed in the same bc txn thus sharing same hash2
             if hash1_response.h1.logIndex not in received_unique_hash1:
                 received_unique_hash1[hash1_response.h1.logIndex] = hash1_response.h1
-            sequenceNumber += 1
+            sequence_number += 1
         last_response_received_t = time.perf_counter()
 
         verification_results = [r.get() for r in result_objects]
@@ -139,16 +141,16 @@ class ClientAgent:
         print("First txn/response RTT (sent out -> received): ", round(first_response_received_t - request_sent_t, 4))
         print("Last  txn/response RTT (sent out -> received): ", round(last_response_received_t - request_sent_t, 4))
 
-        print("Average time (each txn) on signature verification: ", round(total_sig_verify_t / batch_size, 4))
-        print("Average time (each txn) on merkle proof verification: ", round(total_tree_inclusion_verify_t / batch_size, 4))
+        print("Avg time (per txn) on signature verification: ", round(total_sig_verify_t / batch_size, 4))
+        print("Avg time (per txn) on merkle proof verification: ", round(total_tree_inclusion_verify_t / batch_size, 4))
 
         print("Total phase1 latency (all sent out -> all verified): ", round(end_t - request_sent_t, 4))
-        print("Phase1 Throughput: ", round(batch_size/(end_t - request_sent_t),4))
+        print("Phase1 Throughput: ", round(batch_size/(end_t - request_sent_t), 4))
 
         # for each unique hash1, ask server for its hash2
         hash2_verify_start = time.perf_counter()
         all_hash2_threads = []
-        for k,hash1 in received_unique_hash1.items():
+        for k, hash1 in received_unique_hash1.items():
             thread = threading.Thread(target=self._check_hash2, args=(hash1,))
             all_hash2_threads.append(thread)
             thread.start()

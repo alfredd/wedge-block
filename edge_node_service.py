@@ -20,6 +20,7 @@ verifier = DSS.new(trusted_public_key, 'fips-186-3')
 private_key = ECC.import_key(open('privatekey.der', 'rb').read())
 signer = DSS.new(private_key, 'fips-186-3')
 
+
 def verify_sig(txn: wb.Transaction):
     # verify the signature is correct
     sig_verify_start = time.perf_counter()
@@ -47,7 +48,7 @@ class EdgeService(wbgrpc.EdgeNodeServicer):
     def Execute(self, request: wb.Transaction, context):
         raise NotImplementedError
 
-    def ExecuteBatch(self, request: [(wb.Transaction)], context):
+    def ExecuteBatch(self, request: [wb.Transaction], context):
         function_start = time.perf_counter()
         workload_size = len(request.content)
 
@@ -68,15 +69,16 @@ class EdgeService(wbgrpc.EdgeNodeServicer):
                 print("Verification Failed")
             total_sig_verify_t += v_result[1]
 
-        print("Total time on signature verification (parallel): ", round(time.perf_counter() - sig_verification_start_t, 4))
+        print("Total time on signature verification (parallel): ",
+              round(time.perf_counter() - sig_verification_start_t, 4))
         print("Avg time each txn on signature verification: ", round(total_sig_verify_t / workload_size, 4))
 
         batch_time_avg = 0
         batch_signing_avg = 0
-
+        batch_n = 0
         for batch_n in range(workload_size//self.batch_size + 1):
             batch = request.content[batch_n*self.batch_size:(batch_n+1)*self.batch_size]
-            if (len(batch) == 0):
+            if len(batch) == 0:
                 batch_n -= 1
                 break
 
@@ -98,8 +100,8 @@ class EdgeService(wbgrpc.EdgeNodeServicer):
                 yield response
 
         print(self.edge_node.analyser.get_avg_record())
-        print("Avg time per batch (h1_sign): ", round(batch_signing_avg / (batch_n + 1),4))
-        print("Avg time per batch (total): ", round(batch_time_avg/(batch_n + 1),4))
+        print("Avg time per batch (h1_sign): ", round(batch_signing_avg / (batch_n + 1), 4))
+        print("Avg time per batch (total): ", round(batch_time_avg/(batch_n + 1), 4))
         print("ExecuteBatch Completed\n")
 
         pool.close()
@@ -107,7 +109,7 @@ class EdgeService(wbgrpc.EdgeNodeServicer):
 
         function_end = time.perf_counter()
         self.total_service_time += function_end - function_start
-        print("[EdgeNode (H1): ]Total Service time so far: ", round(self.total_service_time,4))
+        print("[EdgeNode (H1): ]Total Service time so far: ", round(self.total_service_time, 4))
 
     def GetPhase2Hash(self, request: wb.LogHash, context):
         if not self.edge_node.entry_exist_at_index(request.logIndex):
@@ -127,6 +129,7 @@ def serve():
     server.add_insecure_port('[::]:50051')
     server.start()
     server.wait_for_termination()
+
 
 if __name__ == '__main__':
     logging.basicConfig()

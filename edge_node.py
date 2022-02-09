@@ -1,13 +1,12 @@
 import wedgeblock_pb2
 
 from merklelib import MerkleTree
-from statistics import mean
 import hashlib
 import pickle
-import codecs
 import threading
 import time
 from ropsten_connector import *
+
 
 class LogEntry:
     # an entry simulating the structure of a block in blockchain (no prev_hash used yet)
@@ -85,7 +84,7 @@ class EdgeNodeKernel:
         # initialize a empty log
         self.log = Log()
 
-    def add_entry(self, data: [(bytes,bytes)], tree=None):
+    def add_entry(self, data: [(bytes, bytes)], tree=None):
         # Input: list of (key,val) pair, each pair represent one transaction to be added
         #        optional: a merkle tree to skip Action 1
         # Action: 1) generate a merkle tree using the input (if necessary)
@@ -97,13 +96,13 @@ class EdgeNodeKernel:
             tree = MerkleTree(data, self.hash_func)
         target_index = self.log.get_next_log_index()
         if not self.log.safe_append(LogEntry(target_index, tree), target_index):
-            target_index = self.add_entry(data,tree)
+            target_index = self.add_entry(data, tree)
         return target_index
 
     def get_log_entry(self, index: int):
         return self.log.get_log_entry(index)
 
-    def update_hash2(self, index:int, hash2):
+    def update_hash2(self, index: int, hash2):
         # return True if logEntry at index exits and its hash2 is successfully updated
         # return False otherwise
         entry = self.log.get_log_entry(index)
@@ -131,7 +130,7 @@ class EdgeNode:
 
     def hash2_manager(self):
         # Ropsten Eth transaction cannot be processed if its size is too large (max gas allowance exceeded)
-        # therefore we set a upper bound to how many hash1 proofs are sent onchain in one transaction
+        # therefore we set a upper bound to how many hash1 proofs are sent on-chain in one transaction
         buffer_threshold = 200
         print("[H2]: hash2 manager invoked \n")
         while len(self.hash2_waiting_buffer) != 0:
@@ -153,7 +152,7 @@ class EdgeNode:
 
             self.hash2_waiting_buffer.clear()
             if temp_buffer is not None:
-                    self.hash2_waiting_buffer = temp_buffer
+                self.hash2_waiting_buffer = temp_buffer
             self.hash2_manager_lock.release()
             # waiting for eth to write into a block
             while True:
@@ -163,7 +162,7 @@ class EdgeNode:
                     assert txn_hash == eth_response['transactionHash']
 
                     self.total_gas_spent += eth_response['gasUsed']
-                    hash2_response_waiting_time = round(time.perf_counter() - hash2_request_sent,4)
+                    hash2_response_waiting_time = round(time.perf_counter() - hash2_request_sent, 4)
                     self.total_h2_waiting_time += hash2_response_waiting_time
                     print("[H2]: Hash2 response for {} log indexes is received after {} seconds."
                           .format(len(waiting_indexes), hash2_response_waiting_time, 4))
@@ -179,7 +178,7 @@ class EdgeNode:
                     break
         print("[H2]: hash2 manager exit \n")
 
-    def process_txn_batch(self, txn_batch: [(wedgeblock_pb2.Transaction)]) -> [wedgeblock_pb2.Hash1]:
+    def process_txn_batch(self, txn_batch: [wedgeblock_pb2.Transaction]) -> [wedgeblock_pb2.Hash1]:
         # Input: list of transactions to be added into the log
         # Action: 1) pass input list to the kernel to be added
         #         2) invoke hash2 manager thread to complete the hash2 part of the newly added entry
@@ -218,7 +217,7 @@ class EdgeNode:
             proof_pickle = pickle.dumps(proof)
             hash1 = wedgeblock_pb2.Hash1(logIndex=log_index, rw=txn.rw, merkleRoot=root, merkleProof=proof_pickle)
             hash1_list.append(hash1)
-        self.analyser.history[log_index].hash1_responses_ready = time.perf_counter() # third measurement
+        self.analyser.history[log_index].hash1_responses_ready = time.perf_counter()  # third measurement
 
         # print(self.analyser.history[log_index].get_hash1_latency_analysis())
         return hash1_list
@@ -245,9 +244,8 @@ class EdgeNodeAnalyser:
             avg_h1_prep += entry_record.hash1_responses_ready - entry_record.entry_added
         return "Avg time per batch (tree_gen): {}\n" \
                "Avg time per batch (h1_prep): {}".format(
-            round(avg_tree_gen/len(self.history),4),
-            round(avg_h1_prep/len(self.history),4))
-
+                round(avg_tree_gen/len(self.history), 4),
+                round(avg_h1_prep/len(self.history), 4))
 
     class LogEntryTimeRecord:
         def __init__(self):
@@ -263,11 +261,11 @@ class EdgeNodeAnalyser:
                    "Tree construction: {} \n" \
                    "Hash1 response preparation: {} \n" \
                    "Total: {}".format(
-                self.batch_size,
-                round(self.entry_added - self.process_start, self.precision),
-                round(self.hash1_responses_ready - self.entry_added, self.precision),
-                round(self.hash1_responses_ready - self.process_start, self.precision)
-            )
+                    self.batch_size,
+                    round(self.entry_added - self.process_start, self.precision),
+                    round(self.hash1_responses_ready - self.entry_added, self.precision),
+                    round(self.hash1_responses_ready - self.process_start, self.precision)
+                    )
 
         def get_latency_analysis(self):
             return "Batch of {} transactions completed: \n" \
@@ -275,12 +273,12 @@ class EdgeNodeAnalyser:
                    "Hash1 response preparation: {} \n" \
                    "Hash2 response preparation: {} \n" \
                    "Total: {}".format(
-                self.batch_size,
-                round(self.entry_added - self.process_start, self.precision),
-                round(self.hash1_responses_ready - self.entry_added, self.precision),
-                round(self.hash2_received - self.entry_added, self.precision),
-                round(self.hash2_received - self.process_start, self.precision)
-            )
+                    self.batch_size,
+                    round(self.entry_added - self.process_start, self.precision),
+                    round(self.hash1_responses_ready - self.entry_added, self.precision),
+                    round(self.hash2_received - self.entry_added, self.precision),
+                    round(self.hash2_received - self.process_start, self.precision)
+                    )
 
         def __str__(self):
             return "{} & {} & {} & {} & {}".format(
