@@ -29,6 +29,16 @@ class EdgeNodeStub(object):
                 request_serializer=wedgeblock__pb2.LogHash.SerializeToString,
                 response_deserializer=wedgeblock__pb2.Hash2.FromString,
                 )
+        self.AnswerQuery = channel.unary_stream(
+                '/wedgeblock.EdgeNode/AnswerQuery',
+                request_serializer=wedgeblock__pb2.QueryBatch.SerializeToString,
+                response_deserializer=wedgeblock__pb2.Hash1Response.FromString,
+                )
+        self.AnswerFullLogAudit = channel.unary_stream(
+                '/wedgeblock.EdgeNode/AnswerFullLogAudit',
+                request_serializer=wedgeblock__pb2.AuditRequest.SerializeToString,
+                response_deserializer=wedgeblock__pb2.Hash1Response.FromString,
+                )
 
 
 class EdgeNodeServicer(object):
@@ -52,6 +62,18 @@ class EdgeNodeServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def AnswerQuery(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def AnswerFullLogAudit(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_EdgeNodeServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -69,6 +91,16 @@ def add_EdgeNodeServicer_to_server(servicer, server):
                     servicer.GetPhase2Hash,
                     request_deserializer=wedgeblock__pb2.LogHash.FromString,
                     response_serializer=wedgeblock__pb2.Hash2.SerializeToString,
+            ),
+            'AnswerQuery': grpc.unary_stream_rpc_method_handler(
+                    servicer.AnswerQuery,
+                    request_deserializer=wedgeblock__pb2.QueryBatch.FromString,
+                    response_serializer=wedgeblock__pb2.Hash1Response.SerializeToString,
+            ),
+            'AnswerFullLogAudit': grpc.unary_stream_rpc_method_handler(
+                    servicer.AnswerFullLogAudit,
+                    request_deserializer=wedgeblock__pb2.AuditRequest.FromString,
+                    response_serializer=wedgeblock__pb2.Hash1Response.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -128,5 +160,39 @@ class EdgeNode(object):
         return grpc.experimental.unary_unary(request, target, '/wedgeblock.EdgeNode/GetPhase2Hash',
             wedgeblock__pb2.LogHash.SerializeToString,
             wedgeblock__pb2.Hash2.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def AnswerQuery(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_stream(request, target, '/wedgeblock.EdgeNode/AnswerQuery',
+            wedgeblock__pb2.QueryBatch.SerializeToString,
+            wedgeblock__pb2.Hash1Response.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def AnswerFullLogAudit(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_stream(request, target, '/wedgeblock.EdgeNode/AnswerFullLogAudit',
+            wedgeblock__pb2.AuditRequest.SerializeToString,
+            wedgeblock__pb2.Hash1Response.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

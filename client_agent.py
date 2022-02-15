@@ -1,6 +1,4 @@
 from Crypto.Hash import SHA256
-from Crypto.PublicKey import ECC
-from Crypto.Signature import DSS
 
 import pickle
 import merklelib
@@ -14,11 +12,7 @@ from block_validator import BlockValidator
 import wedgeblock_pb2_grpc as wbgrpc
 import wedgeblock_pb2 as wb
 
-private_key = ECC.import_key(open('privatekey.der', 'rb').read())
-trusted_public_key = ECC.import_key(open('publickey.der', 'rb').read())
-
-signer = DSS.new(private_key, 'fips-186-3')
-verifier = DSS.new(trusted_public_key, 'fips-186-3')
+from credential_tools import signer, verifier
 
 
 def hash_func(value):
@@ -26,20 +20,17 @@ def hash_func(value):
 
 
 def make_transaction(key, val, seq) -> wb.Transaction:
-    global signer
     if type(key) is str and type(val) is str:
         key = str.encode(key)
         val = str.encode(val)
     txn_content = wb.RWSet(type=wb.TxnType.RW, key=key, val=val)
-    txn_content_hash = SHA256.new(txn_content.SerializeToString())  # why not use hash_func(txn_content.)
+    txn_content_hash = SHA256.new(txn_content.SerializeToString() + str(seq).encode())
     txn_signature = signer.sign(txn_content_hash)
     return wb.Transaction(rw=txn_content, signature=txn_signature, sequenceNumber=seq)
 
 
 def verify_response(hash1_response: wb.Hash1Response, original_transaction: wb.Transaction):
     # verify the signature is correct
-    global verifier
-
     sig_verify_start = time.perf_counter()
     
     hash1 = hash1_response.h1
@@ -48,7 +39,7 @@ def verify_response(hash1_response: wb.Hash1Response, original_transaction: wb.T
     try:
         verifier.verify(received_response_hash, response_signature)
     except ValueError:
-        return (False, 0, 0)
+        return False, 0, 0
     sig_verify_time = time.perf_counter() - sig_verify_start
 
     # verify the merkle proof is correct
@@ -58,17 +49,21 @@ def verify_response(hash1_response: wb.Hash1Response, original_transaction: wb.T
     # data to be verified
     data = (original_transaction.rw.key, original_transaction.rw.val, original_transaction.sequenceNumber)
     if not merklelib.verify_leaf_inclusion(data, merkle_proof, hash_func, hash1.merkleRoot):
-        return (False, 0, 0)
+        return False, 0, 0
     tree_inclusion_verify_time = time.perf_counter() - tree_inclusion_verify_start
     
-    return (True, sig_verify_time, tree_inclusion_verify_time)
+    return True, sig_verify_time, tree_inclusion_verify_time
 
 
 class ClientAgent:
-    def __init__(self):
+    def __init__(self, client_id: int):
         self.stub = None
         self.bc_block_validator = BlockValidator()
-        self.hash2_checking_interval = 5
+        self.id = client_id
+        self.hash2_checking_interval = 3
+        self.batch_size = 10000
+        self.txn_key_size = 64
+        self.txn_val_size = 1024
 
     def _check_hash2(self, hash1: wb.Hash1):
         log_hash = wb.LogHash(logIndex=hash1.logIndex, merkleRoot=hash1.merkleRoot.encode())
@@ -80,21 +75,24 @@ class ClientAgent:
         while hash2.status is not wb.Hash2Status.VALID:
             hash2 = self.stub.GetPhase2Hash(log_hash)
             time.sleep(self.hash2_checking_interval)
-        self.bc_block_validator.thread_safe_verify(hash2.TxnHash, hash1.merkleRoot, hash1.logIndex)
+        self.bc_block_validator.thread_safe_verify(hash1.merkleRoot, hash1.logIndex)
+        # self.bc_block_validator.thread_safe_verify(hash2.TxnHash, hash1.merkleRoot, hash1.logIndex)
 
     def run(self, stub: wbgrpc.EdgeNodeStub):
-        pool = mp.get_context('spawn').Pool(mp.cpu_count())
+        # pool = mp.get_context('spawn').Pool(mp.cpu_count())
+        pool = mp.Pool(mp.cpu_count())
+
         self.stub = stub
         start_t = time.perf_counter()
 
-        batch_size = 10000
-        
-        # transaction_batch = generate_transaction_batch(batch_size)
-        
+        batch_size = self.batch_size
+        client_first_key = self.id * batch_size
+
         result_objects = []
-        for i in range(batch_size):
+        for i in range(client_first_key, client_first_key+batch_size):
             result_objects.append(pool.apply_async(make_transaction,
-                                                   args=(i.to_bytes(64, 'big'), i.to_bytes(1024, 'big'), i)))
+                                                   args=(i.to_bytes(self.txn_key_size, 'big'),
+                                                         i.to_bytes(self.txn_val_size, 'big'), i)))
         workload = [r.get() for r in result_objects]
         transaction_batch = wb.TransactionBatch(content=workload)
 
@@ -107,12 +105,10 @@ class ClientAgent:
         # send #batch_size many transactions to the edge node
         request_sent_t = time.perf_counter()
         first_response_received_t = None
-        avg_round_trip_time = 0
         sequence_number = 0
         for hash1_response in self.stub.ExecuteBatch(transaction_batch):
             if first_response_received_t is None:
                 first_response_received_t = time.perf_counter()
-            avg_round_trip_time += time.perf_counter() - request_sent_t
             result_objects.append(pool.apply_async(verify_response, args=(hash1_response, workload[sequence_number])))
             # extract unique hash1s for hash2 queries
             # several hash1s might have been placed in the same bc txn thus sharing same hash2

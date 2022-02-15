@@ -1,11 +1,10 @@
-from client_agent import ClientAgent
+from auditor_agent import AuditorAgent
 
 import grpc
 import wedgeblock_pb2_grpc as wbgrpc
-import sys
 
 
-def run(client_id: int):
+def run():
     # NOTE(gRPC Python Team): .close() is possible on a channel and should be
     # used in circumstances in which the with statement does not fit the needs
     # of the code.
@@ -15,9 +14,8 @@ def run(client_id: int):
     # with grpc.insecure_channel('10.52.2.138:50051', options=options) as channel:
     with grpc.insecure_channel('localhost:50051', options=options) as channel:
         stub = wbgrpc.EdgeNodeStub(channel)
-        ClientAgent(client_id).run(stub)
+        AuditorAgent().run(stub)
 
 
 if __name__ == '__main__':
-    client_id = int(sys.argv[1])
-    run(client_id)
+    run()

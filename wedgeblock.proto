@@ -9,6 +9,8 @@ service EdgeNode {
     rpc Execute (Transaction) returns (Hash1Response);
     rpc ExecuteBatch (TransactionBatch) returns (stream Hash1Response);
     rpc GetPhase2Hash (LogHash) returns (Hash2);
+    rpc AnswerQuery (QueryBatch) returns (stream Hash1Response);
+    rpc AnswerFullLogAudit (AuditRequest) returns (stream Hash1Response);
 }
 
 message RWSet {
@@ -37,6 +39,7 @@ message Hash1 {
     RWSet rw = 2;
     string merkleRoot = 3;
     bytes merkleProof = 4;
+    int32 sequenceNumber = 5;
 }
 
 message Hash1Response {
@@ -71,4 +74,14 @@ message LogEntry {
 
 message LogIndex {
     int32 index = 1;
+}
+
+message QueryBatch {
+    repeated bytes keys = 2;
+    bytes signature = 3;
+}
+
+message AuditRequest {
+    repeated int32 logIndexes = 1;
+    bytes signature = 2;
 }

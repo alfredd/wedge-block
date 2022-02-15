@@ -9,24 +9,18 @@ import edge_node
 import logging
 
 from Crypto.Hash import SHA256
-from Crypto.PublicKey import ECC
-from Crypto.Signature import DSS
 
 import multiprocessing as mp
 
-trusted_public_key = ECC.import_key(open('publickey.der', 'rb').read())
-verifier = DSS.new(trusted_public_key, 'fips-186-3')
-
-private_key = ECC.import_key(open('privatekey.der', 'rb').read())
-signer = DSS.new(private_key, 'fips-186-3')
+from credential_tools import signer, verifier
 
 
-def verify_sig(txn: wb.Transaction):
+def verify_sig(raw_bytes, signature):
     # verify the signature is correct
     sig_verify_start = time.perf_counter()
-    txn_hash = SHA256.new(txn.rw.SerializeToString())
+    txn_hash = SHA256.new(raw_bytes)
     try:
-        verifier.verify(txn_hash, txn.signature)
+        verifier.verify(txn_hash, signature)
     except ValueError:
         return (False, 0)
     sig_verify_time = time.perf_counter() - sig_verify_start
@@ -34,6 +28,8 @@ def verify_sig(txn: wb.Transaction):
 
 
 def sign_response(h1: wb.Hash1):
+    if h1 is None:
+        return None
     response_content_hash = SHA256.new(h1.SerializeToString())
     response_signature = signer.sign(response_content_hash)
     return wb.Hash1Response(h1=h1, signature=response_signature)
@@ -44,6 +40,19 @@ class EdgeService(wbgrpc.EdgeNodeServicer):
         self.edge_node = edge_node.EdgeNode()
         self.batch_size = 1000
         self.total_service_time = 0
+
+    def _sign_hash1_list(self, hash1_list: [wb.Hash1], pool):
+        # sign a list of hash1 in parallel
+        # pool = mp.Pool(mp.cpu_count())
+        result_objects = []
+        for h1 in hash1_list:
+            result_objects.append(pool.apply_async(sign_response, args=(h1,)))
+        signed_hash1_list = [r.get() for r in result_objects]
+        # pool.close()
+        # pool.join()
+
+        return signed_hash1_list
+
 
     def Execute(self, request: wb.Transaction, context):
         raise NotImplementedError
@@ -58,7 +67,10 @@ class EdgeService(wbgrpc.EdgeNodeServicer):
 
         sig_verification_start_t = time.perf_counter()
         for txn in request.content:
-            result_objects.append(pool.apply_async(verify_sig, args=(txn,)))
+            result_objects.append(pool.apply_async(
+                verify_sig,
+                args=(txn.rw.SerializeToString() + str(txn.sequenceNumber).encode(), txn.signature,))
+            )
         verification_results = [r.get() for r in result_objects]
 
         total_sig_verify_t = 0
@@ -88,10 +100,8 @@ class EdgeService(wbgrpc.EdgeNodeServicer):
 
             # signing the h1 batch (in parallel)
             signing_start = time.perf_counter()
-            result_objects = []
-            for h1 in h1_result:
-                result_objects.append(pool.apply_async(sign_response, args=(h1,)))
-            batch_response = [r.get() for r in result_objects]
+
+            batch_response = self._sign_hash1_list(h1_result, pool)
 
             batch_signing_avg += time.perf_counter() - signing_start
             batch_time_avg += time.perf_counter() - batch_begin
@@ -99,13 +109,13 @@ class EdgeService(wbgrpc.EdgeNodeServicer):
             for response in batch_response:
                 yield response
 
+        pool.close()
+        pool.join()
+
         print(self.edge_node.analyser.get_avg_record())
         print("Avg time per batch (h1_sign): ", round(batch_signing_avg / (batch_n + 1), 4))
         print("Avg time per batch (total): ", round(batch_time_avg/(batch_n + 1), 4))
         print("ExecuteBatch Completed\n")
-
-        pool.close()
-        pool.join()
 
         function_end = time.perf_counter()
         self.total_service_time += function_end - function_start
@@ -118,6 +128,26 @@ class EdgeService(wbgrpc.EdgeNodeServicer):
         if h2 is not None:
             return wb.Hash2(TxnHash=h2, status=wb.Hash2Status.VALID)
         return wb.Hash2(status=wb.Hash2Status.NOT_READY)
+
+    def AnswerQuery(self, query: wb.QueryBatch, context):
+        h1_result = self.edge_node.answer_query(query.keys)
+
+        pool = mp.Pool(mp.cpu_count())
+        batch_response = self._sign_hash1_list(h1_result, pool)
+        pool.close()
+        pool.join()
+
+        for response in batch_response:
+            yield response
+
+    def AnswerFullLogAudit(self, audit_request: wb.AuditRequest, context):
+        h1_result = self.edge_node.answer_full_log_query(audit_request.logIndexes)
+        pool = mp.Pool(mp.cpu_count())
+        batch_response = self._sign_hash1_list(h1_result, pool)
+        pool.close()
+        pool.join()
+        for response in batch_response:
+            yield response
 
 
 def serve():
