@@ -12,7 +12,7 @@ from Crypto.Hash import SHA256
 
 import multiprocessing as mp
 
-from credential_tools import signer, verifier
+from credential_tools import signer, verifier, sign_eth_msg
 
 
 def verify_sig(raw_bytes, signature):
@@ -22,17 +22,18 @@ def verify_sig(raw_bytes, signature):
     try:
         verifier.verify(txn_hash, signature)
     except ValueError:
-        return (False, 0)
+        return False, 0
     sig_verify_time = time.perf_counter() - sig_verify_start
-    return (True, sig_verify_time)
+    return True, sig_verify_time
 
 
 def sign_response(h1: wb.Hash1):
     if h1 is None:
         return None
+    eth_msg_signature = sign_eth_msg(h1.logIndex, h1.merkleRoot)
     response_content_hash = SHA256.new(h1.SerializeToString())
     response_signature = signer.sign(response_content_hash)
-    return wb.Hash1Response(h1=h1, signature=response_signature)
+    return wb.Hash1Response(h1=h1, ethMsgSignature= eth_msg_signature, responseSignature=response_signature)
 
 
 class EdgeService(wbgrpc.EdgeNodeServicer):

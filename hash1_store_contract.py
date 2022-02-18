@@ -2,8 +2,6 @@ from web3 import Web3, HTTPProvider
 import web3
 import json
 
-from web3.exceptions import TimeExhausted
-
 
 class Hash1StoreContract:
     def __init__(self):
@@ -56,4 +54,4 @@ if __name__ == '__main__':
     # print("received receipt.")
     # print(receipt)
 
-    # print(hash1_store.getRootAtIndex(0))
+    print(hash1_store.getRootAtIndex(0))

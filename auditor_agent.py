@@ -7,7 +7,7 @@ import time
 import multiprocessing as mp
 import random
 
-from credential_tools import signer, verifier
+from credential_tools import signer, verifier, verify_eth_msg_sig
 
 
 import wedgeblock_pb2_grpc as wbgrpc
@@ -23,13 +23,18 @@ def verify_response(hash1_response: wb.Hash1Response):
     sig_verify_start = time.perf_counter()
 
     hash1 = hash1_response.h1
-    response_signature = hash1_response.signature
+    response_signature = hash1_response.responseSignature
     received_response_hash = SHA256.new(hash1.SerializeToString())
     try:
         verifier.verify(received_response_hash, response_signature)
     except ValueError:
         return False, 0, 0
     sig_verify_time = time.perf_counter() - sig_verify_start
+
+    # verify eth msg signature is correct
+    eth_msg_verified = verify_eth_msg_sig(hash1.logIndex, hash1.merkleRoot, hash1_response.ethMsgSignature)
+    if not eth_msg_verified:
+        return False, 0, 0
 
     # verify the merkle proof is correct
     tree_inclusion_verify_start = time.perf_counter()
@@ -168,9 +173,8 @@ class AuditorAgent:
     def run(self, stub: wbgrpc.EdgeNodeStub):
         self.stub = stub
 
-        # log_indexes_to_query = list(range(10))
-        # self.send_audit_request(log_indexes_to_query)
+        log_indexes_to_query = list(range(10))
+        self.send_audit_request(log_indexes_to_query)
 
-
-        query_size = 4000   # equivalent to edge node batch sizes
-        self.send_query(query_size)
+        # query_size = 2000
+        # self.send_query(query_size)

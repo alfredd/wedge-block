@@ -34,7 +34,7 @@ def verify_response(hash1_response: wb.Hash1Response, original_transaction: wb.T
     sig_verify_start = time.perf_counter()
     
     hash1 = hash1_response.h1
-    response_signature = hash1_response.signature
+    response_signature = hash1_response.responseSignature
     received_response_hash = SHA256.new(hash1.SerializeToString())
     try:
         verifier.verify(received_response_hash, response_signature)

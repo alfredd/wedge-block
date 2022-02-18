@@ -44,7 +44,8 @@ message Hash1 {
 
 message Hash1Response {
     Hash1 h1 = 1;
-    bytes signature = 2;
+    bytes ethMsgSignature = 2;
+    bytes responseSignature = 3;
 }
 
 message Hash1ResponseBatch {

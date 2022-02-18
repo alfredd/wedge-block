@@ -20,7 +20,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x10wedgeblock.proto\x12\nwedgeblock\"D\n\x05RWSet\x12!\n\x04type\x18\x01 \x01(\x0e\x32\x13.wedgeblock.TxnType\x12\x0b\n\x03key\x18\x02 \x01(\x0c\x12\x0b\n\x03val\x18\x03 \x01(\x0c\"W\n\x0bTransaction\x12\x1d\n\x02rw\x18\x01 \x01(\x0b\x32\x11.wedgeblock.RWSet\x12\x11\n\tsignature\x18\x02 \x01(\x0c\x12\x16\n\x0esequenceNumber\x18\x03 \x01(\x05\"<\n\x10TransactionBatch\x12(\n\x07\x63ontent\x18\x01 \x03(\x0b\x32\x17.wedgeblock.Transaction\"y\n\x05Hash1\x12\x10\n\x08logIndex\x18\x01 \x01(\x05\x12\x1d\n\x02rw\x18\x02 \x01(\x0b\x32\x11.wedgeblock.RWSet\x12\x12\n\nmerkleRoot\x18\x03 \x01(\t\x12\x13\n\x0bmerkleProof\x18\x04 \x01(\x0c\x12\x16\n\x0esequenceNumber\x18\x05 \x01(\x05\"A\n\rHash1Response\x12\x1d\n\x02h1\x18\x01 \x01(\x0b\x32\x11.wedgeblock.Hash1\x12\x11\n\tsignature\x18\x02 \x01(\x0c\"@\n\x12Hash1ResponseBatch\x12*\n\x07\x63ontent\x18\x01 \x03(\x0b\x32\x19.wedgeblock.Hash1Response\"/\n\x07LogHash\x12\x10\n\x08logIndex\x18\x01 \x01(\x05\x12\x12\n\nmerkleRoot\x18\x02 \x01(\t\"A\n\x05Hash2\x12\x0f\n\x07TxnHash\x18\x01 \x01(\x0c\x12\'\n\x06status\x18\x02 \x01(\x0e\x32\x17.wedgeblock.Hash2Status\"-\n\x08LogEntry\x12\r\n\x05index\x18\x01 \x01(\x05\x12\x12\n\nmerkleTree\x18\x02 \x01(\x0c\"\x19\n\x08LogIndex\x12\r\n\x05index\x18\x01 \x01(\x05\"-\n\nQueryBatch\x12\x0c\n\x04keys\x18\x02 \x03(\x0c\x12\x11\n\tsignature\x18\x03 \x01(\x0c\"5\n\x0c\x41uditRequest\x12\x12\n\nlogIndexes\x18\x01 \x03(\x05\x12\x11\n\tsignature\x18\x02 \x01(\x0c*\x19\n\x07TxnType\x12\x06\n\x02RO\x10\x00\x12\x06\n\x02RW\x10\x01*4\n\x0bHash2Status\x12\x0b\n\x07INVALID\x10\x00\x12\r\n\tNOT_READY\x10\x01\x12\t\n\x05VALID\x10\x02\x32\xde\x02\n\x08\x45\x64geNode\x12=\n\x07\x45xecute\x12\x17.wedgeblock.Transaction\x1a\x19.wedgeblock.Hash1Response\x12I\n\x0c\x45xecuteBatch\x12\x1c.wedgeblock.TransactionBatch\x1a\x19.wedgeblock.Hash1Response0\x01\x12\x37\n\rGetPhase2Hash\x12\x13.wedgeblock.LogHash\x1a\x11.wedgeblock.Hash2\x12\x42\n\x0b\x41nswerQuery\x12\x16.wedgeblock.QueryBatch\x1a\x19.wedgeblock.Hash1Response0\x01\x12K\n\x12\x41nswerFullLogAudit\x12\x18.wedgeblock.AuditRequest\x1a\x19.wedgeblock.Hash1Response0\x01\x62\x06proto3'
+  serialized_pb=b'\n\x10wedgeblock.proto\x12\nwedgeblock\"D\n\x05RWSet\x12!\n\x04type\x18\x01 \x01(\x0e\x32\x13.wedgeblock.TxnType\x12\x0b\n\x03key\x18\x02 \x01(\x0c\x12\x0b\n\x03val\x18\x03 \x01(\x0c\"W\n\x0bTransaction\x12\x1d\n\x02rw\x18\x01 \x01(\x0b\x32\x11.wedgeblock.RWSet\x12\x11\n\tsignature\x18\x02 \x01(\x0c\x12\x16\n\x0esequenceNumber\x18\x03 \x01(\x05\"<\n\x10TransactionBatch\x12(\n\x07\x63ontent\x18\x01 \x03(\x0b\x32\x17.wedgeblock.Transaction\"y\n\x05Hash1\x12\x10\n\x08logIndex\x18\x01 \x01(\x05\x12\x1d\n\x02rw\x18\x02 \x01(\x0b\x32\x11.wedgeblock.RWSet\x12\x12\n\nmerkleRoot\x18\x03 \x01(\t\x12\x13\n\x0bmerkleProof\x18\x04 \x01(\x0c\x12\x16\n\x0esequenceNumber\x18\x05 \x01(\x05\"b\n\rHash1Response\x12\x1d\n\x02h1\x18\x01 \x01(\x0b\x32\x11.wedgeblock.Hash1\x12\x17\n\x0f\x65thMsgSignature\x18\x02 \x01(\x0c\x12\x19\n\x11responseSignature\x18\x03 \x01(\x0c\"@\n\x12Hash1ResponseBatch\x12*\n\x07\x63ontent\x18\x01 \x03(\x0b\x32\x19.wedgeblock.Hash1Response\"/\n\x07LogHash\x12\x10\n\x08logIndex\x18\x01 \x01(\x05\x12\x12\n\nmerkleRoot\x18\x02 \x01(\t\"A\n\x05Hash2\x12\x0f\n\x07TxnHash\x18\x01 \x01(\x0c\x12\'\n\x06status\x18\x02 \x01(\x0e\x32\x17.wedgeblock.Hash2Status\"-\n\x08LogEntry\x12\r\n\x05index\x18\x01 \x01(\x05\x12\x12\n\nmerkleTree\x18\x02 \x01(\x0c\"\x19\n\x08LogIndex\x12\r\n\x05index\x18\x01 \x01(\x05\"-\n\nQueryBatch\x12\x0c\n\x04keys\x18\x02 \x03(\x0c\x12\x11\n\tsignature\x18\x03 \x01(\x0c\"5\n\x0c\x41uditRequest\x12\x12\n\nlogIndexes\x18\x01 \x03(\x05\x12\x11\n\tsignature\x18\x02 \x01(\x0c*\x19\n\x07TxnType\x12\x06\n\x02RO\x10\x00\x12\x06\n\x02RW\x10\x01*4\n\x0bHash2Status\x12\x0b\n\x07INVALID\x10\x00\x12\r\n\tNOT_READY\x10\x01\x12\t\n\x05VALID\x10\x02\x32\xde\x02\n\x08\x45\x64geNode\x12=\n\x07\x45xecute\x12\x17.wedgeblock.Transaction\x1a\x19.wedgeblock.Hash1Response\x12I\n\x0c\x45xecuteBatch\x12\x1c.wedgeblock.TransactionBatch\x1a\x19.wedgeblock.Hash1Response0\x01\x12\x37\n\rGetPhase2Hash\x12\x13.wedgeblock.LogHash\x1a\x11.wedgeblock.Hash2\x12\x42\n\x0b\x41nswerQuery\x12\x16.wedgeblock.QueryBatch\x1a\x19.wedgeblock.Hash1Response0\x01\x12K\n\x12\x41nswerFullLogAudit\x12\x18.wedgeblock.AuditRequest\x1a\x19.wedgeblock.Hash1Response0\x01\x62\x06proto3'
 )
 
 _TXNTYPE = _descriptor.EnumDescriptor(
@@ -43,8 +43,8 @@ _TXNTYPE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=801,
-  serialized_end=826,
+  serialized_start=834,
+  serialized_end=859,
 )
 _sym_db.RegisterEnumDescriptor(_TXNTYPE)
 
@@ -74,8 +74,8 @@ _HASH2STATUS = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=828,
-  serialized_end=880,
+  serialized_start=861,
+  serialized_end=913,
 )
 _sym_db.RegisterEnumDescriptor(_HASH2STATUS)
 
@@ -288,8 +288,15 @@ _HASH1RESPONSE = _descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='signature', full_name='wedgeblock.Hash1Response.signature', index=1,
+      name='ethMsgSignature', full_name='wedgeblock.Hash1Response.ethMsgSignature', index=1,
       number=2, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"",
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='responseSignature', full_name='wedgeblock.Hash1Response.responseSignature', index=2,
+      number=3, type=12, cpp_type=9, label=1,
       has_default_value=False, default_value=b"",
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -307,7 +314,7 @@ _HASH1RESPONSE = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=376,
-  serialized_end=441,
+  serialized_end=474,
 )
 
 
@@ -338,8 +345,8 @@ _HASH1RESPONSEBATCH = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=443,
-  serialized_end=507,
+  serialized_start=476,
+  serialized_end=540,
 )
 
 
@@ -377,8 +384,8 @@ _LOGHASH = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=509,
-  serialized_end=556,
+  serialized_start=542,
+  serialized_end=589,
 )
 
 
@@ -416,8 +423,8 @@ _HASH2 = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=558,
-  serialized_end=623,
+  serialized_start=591,
+  serialized_end=656,
 )
 
 
@@ -455,8 +462,8 @@ _LOGENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=625,
-  serialized_end=670,
+  serialized_start=658,
+  serialized_end=703,
 )
 
 
@@ -487,8 +494,8 @@ _LOGINDEX = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=672,
-  serialized_end=697,
+  serialized_start=705,
+  serialized_end=730,
 )
 
 
@@ -526,8 +533,8 @@ _QUERYBATCH = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=699,
-  serialized_end=744,
+  serialized_start=732,
+  serialized_end=777,
 )
 
 
@@ -565,8 +572,8 @@ _AUDITREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=746,
-  serialized_end=799,
+  serialized_start=779,
+  serialized_end=832,
 )
 
 _RWSET.fields_by_name['type'].enum_type = _TXNTYPE
@@ -685,8 +692,8 @@ _EDGENODE = _descriptor.ServiceDescriptor(
   index=0,
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_start=883,
-  serialized_end=1233,
+  serialized_start=916,
+  serialized_end=1266,
   methods=[
   _descriptor.MethodDescriptor(
     name='Execute',
