@@ -30,10 +30,8 @@ def verify_sig(raw_bytes, signature):
 def sign_response(h1: wb.Hash1):
     if h1 is None:
         return None
-    eth_msg_signature = sign_eth_msg(h1.logIndex, h1.merkleRoot)
-    response_content_hash = SHA256.new(h1.SerializeToString())
-    response_signature = signer.sign(response_content_hash)
-    return wb.Hash1Response(h1=h1, ethMsgSignature= eth_msg_signature, responseSignature=response_signature)
+    eth_msg_signature = sign_eth_msg(h1.logIndex, h1.merkleRoot, h1.merkleProofPath, h1.merkleProofDir, h1.rawTxnStr)
+    return wb.Hash1Response(h1=h1, ethMsgSignature= eth_msg_signature)
 
 
 class EdgeService(wbgrpc.EdgeNodeServicer):
@@ -70,7 +68,7 @@ class EdgeService(wbgrpc.EdgeNodeServicer):
         for txn in request.content:
             result_objects.append(pool.apply_async(
                 verify_sig,
-                args=(txn.rw.SerializeToString() + str(txn.sequenceNumber).encode(), txn.signature,))
+                args=(txn.key + txn.val + str(txn.sequenceNumber).encode(), txn.signature,))
             )
         verification_results = [r.get() for r in result_objects]
 

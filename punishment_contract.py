@@ -66,9 +66,9 @@ if __name__ == '__main__':
     # the correct root at index 0
     # c1fa082b1e9639f09428be63228a2d745fba22b6bc6edf7a5ef6f225fc04ba90
 
-    message_hash = Web3.solidityKeccak(['uint256', 'string'], [0, "yinan"])
+    message_hash = Web3.solidityKeccak(['uint256', 'string'], [0, "c1fa082b1e9639f09428be63228a2d745fba22b6bc6edf7a5ef6f225fc04ba90"])
     message_hash = encode_defunct(primitive=message_hash)
     signed_message = w3.eth.account.sign_message(message_hash, private_key=PRIVATE_KEY)
 
-    result = punishment_contract.invokePunishment(0, "yinan", signed_message.signature)
+    result = punishment_contract.invokePunishment(0, "c1fa082b1e9639f09428be63228a2d745fba22b6bc6edf7a5ef6f225fc04ba90", signed_message.signature)
     print(result.hex())

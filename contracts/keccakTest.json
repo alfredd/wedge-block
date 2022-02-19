@@ -1,0 +1,79 @@
+{
+		"abi": [
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "_edge",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "_client",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "_storage",
+						"type": "address"
+					}
+				],
+				"stateMutability": "payable",
+				"type": "constructor"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "index",
+						"type": "uint256"
+					},
+					{
+						"internalType": "bytes",
+						"name": "merkle_root",
+						"type": "bytes"
+					},
+					{
+						"internalType": "bytes[]",
+						"name": "merkle_path",
+						"type": "bytes[]"
+					},
+					{
+						"internalType": "uint256[]",
+						"name": "merkle_path_dir",
+						"type": "uint256[]"
+					},
+					{
+						"internalType": "string",
+						"name": "raw_txn_str",
+						"type": "string"
+					},
+					{
+						"internalType": "bytes",
+						"name": "signature",
+						"type": "bytes"
+					}
+				],
+				"name": "invokePunishment",
+				"outputs": [
+					{
+						"internalType": "bytes",
+						"name": "",
+						"type": "bytes"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"kind": "dev",
+			"methods": {},
+			"version": 1
+		},
+		"userdoc": {
+			"kind": "user",
+			"methods": {},
+			"version": 1
+		}
+	}

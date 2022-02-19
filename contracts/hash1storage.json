@@ -16,9 +16,9 @@
 				"name": "getRootAtIndex",
 				"outputs": [
 					{
-						"internalType": "string",
+						"internalType": "bytes",
 						"name": "",
-						"type": "string"
+						"type": "bytes"
 					}
 				],
 				"stateMutability": "view",
@@ -40,9 +40,9 @@
 			{
 				"inputs": [
 					{
-						"internalType": "string[]",
+						"internalType": "bytes[]",
 						"name": "newMerkleRoots",
-						"type": "string[]"
+						"type": "bytes[]"
 					},
 					{
 						"internalType": "uint256",

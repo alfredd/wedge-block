@@ -7,6 +7,7 @@ import threading
 import time
 from collections import defaultdict
 from hash1_store_contract import *
+from credential_tools import keccak_hash_func
 
 
 class LogEntry:
@@ -89,7 +90,7 @@ class EdgeNodeKernel:
         # initialize a empty log
         self._log = Log()
 
-    def add_entry(self, data: [(bytes, bytes)], tree=None):
+    def add_entry(self, _data: [(bytes, bytes, int)], _tree=None):
         # Input: list of (key,val) pair, each pair represent one transaction to be added
         #        optional: a merkle tree to skip Action 1
         # Action: 1) generate a merkle tree using the input (if necessary)
@@ -97,11 +98,11 @@ class EdgeNodeKernel:
         #         3) add the log entry into the log
         # Output: the index in the log where the newly generated entry resides at
 
-        if tree is None:
-            tree = MerkleTree(data, self.hash_func)
+        if _tree is None:
+            _tree = MerkleTree(_data, keccak_hash_func)
         target_index = self._log.get_next_log_index()
-        if not self._log.safe_append(LogEntry(target_index, tree), target_index):
-            target_index = self.add_entry(data, tree)
+        if not self._log.safe_append(LogEntry(target_index, _tree), target_index):
+            target_index = self.add_entry(_data, _tree)
         return target_index
 
     def get_log_entry(self, index: int):
@@ -114,10 +115,6 @@ class EdgeNodeKernel:
         if entry is None:
             return False
         return entry.set_hash2(hash2)
-
-    @staticmethod
-    def hash_func(value):
-        return hashlib.sha256(value).hexdigest()
 
 
 class EdgeNodeStorage:
@@ -137,30 +134,30 @@ class EdgeNodeStorage:
         self._storage = dict()
         self._key_lookup_table = dict()
 
-    def add(self, log_index: int, key, content):
+    def add(self, log_index: int, _key, content):
         if log_index not in self._storage:
             self._storage[log_index] = dict()
-        self._storage[log_index][key] = content
-        self._key_lookup_table[key] = log_index
+        self._storage[log_index][_key] = content
+        self._key_lookup_table[_key] = log_index
 
-    def key_location_lookup(self, key):
+    def key_location_lookup(self, _key):
         # return None if not exist
-        return self._key_lookup_table.get(key)
+        return self._key_lookup_table.get(_key)
 
-    def get_txn(self, key):
-        log_index = self.key_location_lookup(key)
+    def get_txn(self, _key):
+        log_index = self.key_location_lookup(_key)
         if log_index is not None:
             # txn must exist
-            val, seq = self._storage[log_index][key]
-            return log_index, key, val, seq
+            _val, _seq = self._storage[log_index][_key]
+            return log_index, _key, _val, _seq
         else:
             # txn does not exist
-            return None, key, None,None
+            return None, _key, None, None
 
     def get_all_txn_at(self, log_index):
         txn_list = []
-        for key, (val, seq) in self._storage[log_index].items():
-            txn_list.append((key, val, seq))
+        for _key, (_val, _seq) in self._storage[log_index].items():
+            txn_list.append((_key, _val, _seq))
         return txn_list
 
 
@@ -238,21 +235,34 @@ class EdgeNode:
         tree = log_entry.merkle_tree
         hash1_list = []
         for key, val, seq in raw_leaves_data:
-            if val is None and seq is None:
+            if val is None:
                 hash1_list.append(wb.Hash1(logIndex=log_index,
-                                           rw=wb.RWSet(type=wb.TxnType.RO, key=key, val=None),
                                            merkleRoot=None,
-                                           merkleProof=None, sequenceNumber=None))
+                                           merkleProofPath=None,
+                                           merkleProofDir=None,
+                                           merkleProof=None,
+                                           key=key,
+                                           val=None,
+                                           sequenceNumber=None,
+                                           rawTxnStr=None))
                 continue
-            rw_set = wb.RWSet(type=wb.TxnType.RW, key=key, val=val)
+
             proof = tree.get_proof((key, val, seq))
-            proof_pickle = pickle.dumps(proof)
-            hash1 = wb.Hash1(logIndex=log_index,
-                             rw=rw_set,
-                             merkleRoot=tree.merkle_root,
-                             merkleProof=proof_pickle,
-                             sequenceNumber=seq)
-            hash1_list.append(hash1)
+            proof_path = []
+            proof_dir = []
+            for proof_node in proof._nodes:
+                proof_path.append(proof_node.hash)
+                proof_dir.append(proof_node.type)
+
+            hash1_list.append(wb.Hash1(logIndex=log_index,
+                                       merkleRoot=bytes.fromhex(tree.merkle_root),  # root should be bytes
+                                       merkleProofPath=proof_path,
+                                       merkleProofDir=proof_dir,
+                                       merkleProof=pickle.dumps(proof),
+                                       key=key,
+                                       val=val,
+                                       sequenceNumber=seq,
+                                       rawTxnStr=str((key, val, seq))))
         return hash1_list
 
     def process_txn_batch(self, txn_batch: [wb.Transaction]) -> [wb.Hash1]:
@@ -268,7 +278,7 @@ class EdgeNode:
         time_record.batch_size = len(txn_batch)
         time_record.process_start = time.perf_counter()  # first measurement
 
-        entry_content = [(txn.rw.key, txn.rw.val, txn.sequenceNumber) for txn in txn_batch]
+        entry_content = [(txn.key, txn.val, txn.sequenceNumber) for txn in txn_batch]
         log_index = self.kernel.add_entry(entry_content)
         log_entry = self.kernel.get_log_entry(log_index)
 
@@ -278,7 +288,7 @@ class EdgeNode:
 
         # inform(invoke) hash2 manager about the new merkle_root
         self._hash2_manager_lock.acquire()
-        self.hash2_waiting_buffer[log_index] = log_entry.merkle_tree.merkle_root
+        self.hash2_waiting_buffer[log_index] = bytes.fromhex(log_entry.merkle_tree.merkle_root)
         self._hash2_manager_lock.release()
         if not self._hash2_manager_thread.is_alive():
             self._hash2_manager_thread = threading.Thread(
@@ -287,8 +297,8 @@ class EdgeNode:
 
         raw_leaves_data = []
         for txn in txn_batch:
-            raw_leaves_data.append((txn.rw.key, txn.rw.val, txn.sequenceNumber))
-            self.storage.add(log_index, txn.rw.key, (txn.rw.val, txn.sequenceNumber))
+            raw_leaves_data.append((txn.key, txn.val, txn.sequenceNumber))
+            self.storage.add(log_index, txn.key, (txn.val, txn.sequenceNumber))
         hash1_list = self._generate_hash1_list(log_index, raw_leaves_data)
 
         self.analyser.history[log_index].hash1_responses_ready = time.perf_counter()  # third measurement

@@ -13,39 +13,32 @@ service EdgeNode {
     rpc AnswerFullLogAudit (AuditRequest) returns (stream Hash1Response);
 }
 
-message RWSet {
-    TxnType type = 1;
-    bytes key = 2;
-    bytes val = 3;
-}
-
 message Transaction {
-    RWSet rw = 1;
-    bytes signature = 2;
+    bytes key = 1;
+    bytes val = 2;
     int32 sequenceNumber = 3;
+    bytes signature = 4;
 }
 
 message TransactionBatch {
     repeated Transaction content = 1;
 }
 
-enum TxnType {
-    RO = 0;
-    RW = 1;
-}
-
 message Hash1 {
     int32 logIndex = 1;
-    RWSet rw = 2;
-    string merkleRoot = 3;
-    bytes merkleProof = 4;
-    int32 sequenceNumber = 5;
+    bytes merkleRoot = 2;
+    repeated bytes merkleProofPath = 3;
+    repeated int32 merkleProofDir = 4;
+    bytes merkleProof = 5;
+    bytes key = 6;
+    bytes val = 7;
+    int32 sequenceNumber = 8;
+    string rawTxnStr = 9;
 }
 
 message Hash1Response {
     Hash1 h1 = 1;
     bytes ethMsgSignature = 2;
-    bytes responseSignature = 3;
 }
 
 message Hash1ResponseBatch {
@@ -54,7 +47,7 @@ message Hash1ResponseBatch {
 
 message LogHash {
     int32 logIndex =1;
-    string merkleRoot = 2;
+    bytes merkleRoot = 2;
 }
 
 message Hash2 {
@@ -66,15 +59,6 @@ enum Hash2Status {
     INVALID = 0;
     NOT_READY = 1;
     VALID = 2;
-}
-
-message LogEntry {
-    int32 index = 1;
-    bytes merkleTree = 2;
-}
-
-message LogIndex {
-    int32 index = 1;
 }
 
 message QueryBatch {

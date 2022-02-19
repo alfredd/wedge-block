@@ -1,8 +1,5 @@
 from Crypto.Hash import SHA256
 
-import pickle
-import merklelib
-import hashlib
 import time
 import multiprocessing as mp
 import threading
@@ -12,47 +9,16 @@ from block_validator import BlockValidator
 import wedgeblock_pb2_grpc as wbgrpc
 import wedgeblock_pb2 as wb
 
-from credential_tools import signer, verifier
-
-
-def hash_func(value):
-    return hashlib.sha256(value).hexdigest()
+from credential_tools import signer, verify_hash1_response
 
 
 def make_transaction(key, val, seq) -> wb.Transaction:
     if type(key) is str and type(val) is str:
         key = str.encode(key)
         val = str.encode(val)
-    txn_content = wb.RWSet(type=wb.TxnType.RW, key=key, val=val)
-    txn_content_hash = SHA256.new(txn_content.SerializeToString() + str(seq).encode())
+    txn_content_hash = SHA256.new(key + val + str(seq).encode())
     txn_signature = signer.sign(txn_content_hash)
-    return wb.Transaction(rw=txn_content, signature=txn_signature, sequenceNumber=seq)
-
-
-def verify_response(hash1_response: wb.Hash1Response, original_transaction: wb.Transaction):
-    # verify the signature is correct
-    sig_verify_start = time.perf_counter()
-    
-    hash1 = hash1_response.h1
-    response_signature = hash1_response.responseSignature
-    received_response_hash = SHA256.new(hash1.SerializeToString())
-    try:
-        verifier.verify(received_response_hash, response_signature)
-    except ValueError:
-        return False, 0, 0
-    sig_verify_time = time.perf_counter() - sig_verify_start
-
-    # verify the merkle proof is correct
-    tree_inclusion_verify_start = time.perf_counter()
-
-    merkle_proof = pickle.loads(hash1.merkleProof)  # deserialize
-    # data to be verified
-    data = (original_transaction.rw.key, original_transaction.rw.val, original_transaction.sequenceNumber)
-    if not merklelib.verify_leaf_inclusion(data, merkle_proof, hash_func, hash1.merkleRoot):
-        return False, 0, 0
-    tree_inclusion_verify_time = time.perf_counter() - tree_inclusion_verify_start
-    
-    return True, sig_verify_time, tree_inclusion_verify_time
+    return wb.Transaction(key=key, val=val, sequenceNumber=seq, signature=txn_signature)
 
 
 class ClientAgent:
@@ -66,7 +32,7 @@ class ClientAgent:
         self.txn_val_size = 1024
 
     def _check_hash2(self, hash1: wb.Hash1):
-        log_hash = wb.LogHash(logIndex=hash1.logIndex, merkleRoot=hash1.merkleRoot.encode())
+        log_hash = wb.LogHash(logIndex=hash1.logIndex, merkleRoot=hash1.merkleRoot)
         hash2 = self.stub.GetPhase2Hash(log_hash)
         if hash2.status is wb.Hash2Status.INVALID:
             # raise Exception
@@ -109,7 +75,8 @@ class ClientAgent:
         for hash1_response in self.stub.ExecuteBatch(transaction_batch):
             if first_response_received_t is None:
                 first_response_received_t = time.perf_counter()
-            result_objects.append(pool.apply_async(verify_response, args=(hash1_response, workload[sequence_number])))
+            result_objects.append(pool.apply_async(verify_hash1_response,
+                                                   args=(hash1_response, workload[sequence_number])))
             # extract unique hash1s for hash2 queries
             # several hash1s might have been placed in the same bc txn thus sharing same hash2
             if hash1_response.h1.logIndex not in received_unique_hash1:

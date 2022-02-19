@@ -16,7 +16,7 @@ class BlockValidator:
         root_stored_onchain = self.contract_connector.getRootAtIndex(expected_log_index)
         if expected_merkle_root != root_stored_onchain:
             raise Exception('Hash2 verification failed. Blockchain \
-            recorded a different merkle root: {}.'.format(root_stored_onchain))
+            recorded a different merkle root: {} than provided expected root: {}.'.format(root_stored_onchain, expected_merkle_root))
         #
         #
         # expected_log_index = str(expected_log_index)
