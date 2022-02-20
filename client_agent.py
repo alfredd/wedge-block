@@ -45,8 +45,8 @@ class ClientAgent:
         # self.bc_block_validator.thread_safe_verify(hash2.TxnHash, hash1.merkleRoot, hash1.logIndex)
 
     def run(self, stub: wbgrpc.EdgeNodeStub):
-        # pool = mp.get_context('spawn').Pool(mp.cpu_count())
-        pool = mp.Pool(mp.cpu_count())
+        pool = mp.get_context('spawn').Pool(mp.cpu_count())
+        # pool = mp.Pool(mp.cpu_count())
 
         self.stub = stub
         start_t = time.perf_counter()

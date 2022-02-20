@@ -12,7 +12,7 @@ from Crypto.Hash import SHA256
 
 import multiprocessing as mp
 
-from credential_tools import verifier, sign_eth_msg
+from credential_tools import verifier, sign_eth_msg, sign_eth_msg_lite
 
 
 def verify_sig(raw_bytes, signature):
@@ -34,22 +34,25 @@ def sign_response(h1: wb.Hash1):
     return wb.Hash1Response(h1=h1, ethMsgSignature=eth_msg_signature)
 
 
+def sign_lite_response(h1: wb.Hash1):
+    if h1 is None:
+        return None
+    eth_msg_signature = sign_eth_msg_lite(h1.logIndex, h1.merkleRoot)
+    return wb.Hash1Response(h1=h1, ethMsgSignature=eth_msg_signature)
+
+
 class EdgeService(wbgrpc.EdgeNodeServicer):
     def __init__(self):
         self.edge_node = edge_node.EdgeNode()
         self.batch_size = 1000
         self.total_service_time = 0
 
-    def _sign_hash1_list(self, hash1_list: [wb.Hash1], pool):
+    def _sign_hash1_list(self, hash1_list: [wb.Hash1], pool, signing_function):
         # sign a list of hash1 in parallel
-        # pool = mp.Pool(mp.cpu_count())
         result_objects = []
         for h1 in hash1_list:
-            result_objects.append(pool.apply_async(sign_response, args=(h1,)))
+            result_objects.append(pool.apply_async(signing_function, args=(h1,)))
         signed_hash1_list = [r.get() for r in result_objects]
-        # pool.close()
-        # pool.join()
-
         return signed_hash1_list
 
     def Execute(self, request: wb.Transaction, context):
@@ -60,7 +63,9 @@ class EdgeService(wbgrpc.EdgeNodeServicer):
         workload_size = len(request.content)
 
         # verify all signatures are correct (parallel)
-        pool = mp.Pool(mp.cpu_count())
+        # pool = mp.Pool(mp.cpu_count())
+        pool = mp.get_context('spawn').Pool(mp.cpu_count())
+
         result_objects = []
 
         sig_verification_start_t = time.perf_counter()
@@ -99,7 +104,12 @@ class EdgeService(wbgrpc.EdgeNodeServicer):
             # signing the h1 batch (in parallel)
             signing_start = time.perf_counter()
 
-            batch_response = self._sign_hash1_list(h1_result, pool)
+            batch_response = self._sign_hash1_list(h1_result, pool, sign_response)
+
+            # result_objects = []
+            # for h1 in h1_result:
+            #     result_objects.append(pool.apply_async(sign_response, args=(h1,)))
+            # batch_response = [r.get() for r in result_objects]
 
             batch_signing_avg += time.perf_counter() - signing_start
             batch_time_avg += time.perf_counter() - batch_begin
@@ -130,8 +140,12 @@ class EdgeService(wbgrpc.EdgeNodeServicer):
     def AnswerQuery(self, query: wb.QueryBatch, context):
         h1_result = self.edge_node.answer_query(query.keys)
 
-        pool = mp.Pool(mp.cpu_count())
-        batch_response = self._sign_hash1_list(h1_result, pool)
+        # pool = mp.Pool(mp.cpu_count())
+        pool = mp.get_context('spawn').Pool(mp.cpu_count())
+        if query.isLiteVersion:
+            batch_response = self._sign_hash1_list(h1_result, pool, sign_lite_response)
+        else:
+            batch_response = self._sign_hash1_list(h1_result, pool, sign_response)
         pool.close()
         pool.join()
 
@@ -140,8 +154,12 @@ class EdgeService(wbgrpc.EdgeNodeServicer):
 
     def AnswerFullLogAudit(self, audit_request: wb.AuditRequest, context):
         h1_result = self.edge_node.answer_full_log_query(audit_request.logIndexes)
-        pool = mp.Pool(mp.cpu_count())
-        batch_response = self._sign_hash1_list(h1_result, pool)
+        # pool = mp.Pool(mp.cpu_count())
+        pool = mp.get_context('spawn').Pool(mp.cpu_count())
+        if audit_request.isLiteVersion:
+            batch_response = self._sign_hash1_list(h1_result, pool, sign_lite_response)
+        else:
+            batch_response = self._sign_hash1_list(h1_result, pool, sign_response)
         pool.close()
         pool.join()
         for response in batch_response:

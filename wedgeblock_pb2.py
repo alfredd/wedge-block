@@ -20,7 +20,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x10wedgeblock.proto\x12\nwedgeblock\"R\n\x0bTransaction\x12\x0b\n\x03key\x18\x01 \x01(\x0c\x12\x0b\n\x03val\x18\x02 \x01(\x0c\x12\x16\n\x0esequenceNumber\x18\x03 \x01(\x05\x12\x11\n\tsignature\x18\x04 \x01(\x0c\"<\n\x10TransactionBatch\x12(\n\x07\x63ontent\x18\x01 \x03(\x0b\x32\x17.wedgeblock.Transaction\"\xb8\x01\n\x05Hash1\x12\x10\n\x08logIndex\x18\x01 \x01(\x05\x12\x12\n\nmerkleRoot\x18\x02 \x01(\x0c\x12\x17\n\x0fmerkleProofPath\x18\x03 \x03(\x0c\x12\x16\n\x0emerkleProofDir\x18\x04 \x03(\x05\x12\x13\n\x0bmerkleProof\x18\x05 \x01(\x0c\x12\x0b\n\x03key\x18\x06 \x01(\x0c\x12\x0b\n\x03val\x18\x07 \x01(\x0c\x12\x16\n\x0esequenceNumber\x18\x08 \x01(\x05\x12\x11\n\trawTxnStr\x18\t \x01(\t\"G\n\rHash1Response\x12\x1d\n\x02h1\x18\x01 \x01(\x0b\x32\x11.wedgeblock.Hash1\x12\x17\n\x0f\x65thMsgSignature\x18\x02 \x01(\x0c\"@\n\x12Hash1ResponseBatch\x12*\n\x07\x63ontent\x18\x01 \x03(\x0b\x32\x19.wedgeblock.Hash1Response\"/\n\x07LogHash\x12\x10\n\x08logIndex\x18\x01 \x01(\x05\x12\x12\n\nmerkleRoot\x18\x02 \x01(\x0c\"A\n\x05Hash2\x12\x0f\n\x07TxnHash\x18\x01 \x01(\x0c\x12\'\n\x06status\x18\x02 \x01(\x0e\x32\x17.wedgeblock.Hash2Status\"-\n\nQueryBatch\x12\x0c\n\x04keys\x18\x02 \x03(\x0c\x12\x11\n\tsignature\x18\x03 \x01(\x0c\"5\n\x0c\x41uditRequest\x12\x12\n\nlogIndexes\x18\x01 \x03(\x05\x12\x11\n\tsignature\x18\x02 \x01(\x0c*4\n\x0bHash2Status\x12\x0b\n\x07INVALID\x10\x00\x12\r\n\tNOT_READY\x10\x01\x12\t\n\x05VALID\x10\x02\x32\xde\x02\n\x08\x45\x64geNode\x12=\n\x07\x45xecute\x12\x17.wedgeblock.Transaction\x1a\x19.wedgeblock.Hash1Response\x12I\n\x0c\x45xecuteBatch\x12\x1c.wedgeblock.TransactionBatch\x1a\x19.wedgeblock.Hash1Response0\x01\x12\x37\n\rGetPhase2Hash\x12\x13.wedgeblock.LogHash\x1a\x11.wedgeblock.Hash2\x12\x42\n\x0b\x41nswerQuery\x12\x16.wedgeblock.QueryBatch\x1a\x19.wedgeblock.Hash1Response0\x01\x12K\n\x12\x41nswerFullLogAudit\x12\x18.wedgeblock.AuditRequest\x1a\x19.wedgeblock.Hash1Response0\x01\x62\x06proto3'
+  serialized_pb=b'\n\x10wedgeblock.proto\x12\nwedgeblock\"R\n\x0bTransaction\x12\x0b\n\x03key\x18\x01 \x01(\x0c\x12\x0b\n\x03val\x18\x02 \x01(\x0c\x12\x16\n\x0esequenceNumber\x18\x03 \x01(\x05\x12\x11\n\tsignature\x18\x04 \x01(\x0c\"<\n\x10TransactionBatch\x12(\n\x07\x63ontent\x18\x01 \x03(\x0b\x32\x17.wedgeblock.Transaction\"\xb8\x01\n\x05Hash1\x12\x10\n\x08logIndex\x18\x01 \x01(\x05\x12\x12\n\nmerkleRoot\x18\x02 \x01(\x0c\x12\x17\n\x0fmerkleProofPath\x18\x03 \x03(\x0c\x12\x16\n\x0emerkleProofDir\x18\x04 \x03(\x05\x12\x13\n\x0bmerkleProof\x18\x05 \x01(\x0c\x12\x0b\n\x03key\x18\x06 \x01(\x0c\x12\x0b\n\x03val\x18\x07 \x01(\x0c\x12\x16\n\x0esequenceNumber\x18\x08 \x01(\x05\x12\x11\n\trawTxnStr\x18\t \x01(\t\"G\n\rHash1Response\x12\x1d\n\x02h1\x18\x01 \x01(\x0b\x32\x11.wedgeblock.Hash1\x12\x17\n\x0f\x65thMsgSignature\x18\x02 \x01(\x0c\"@\n\x12Hash1ResponseBatch\x12*\n\x07\x63ontent\x18\x01 \x03(\x0b\x32\x19.wedgeblock.Hash1Response\"/\n\x07LogHash\x12\x10\n\x08logIndex\x18\x01 \x01(\x05\x12\x12\n\nmerkleRoot\x18\x02 \x01(\x0c\"A\n\x05Hash2\x12\x0f\n\x07TxnHash\x18\x01 \x01(\x0c\x12\'\n\x06status\x18\x02 \x01(\x0e\x32\x17.wedgeblock.Hash2Status\"D\n\nQueryBatch\x12\x0c\n\x04keys\x18\x01 \x03(\x0c\x12\x15\n\risLiteVersion\x18\x02 \x01(\x08\x12\x11\n\tsignature\x18\x03 \x01(\x0c\"L\n\x0c\x41uditRequest\x12\x12\n\nlogIndexes\x18\x01 \x03(\x05\x12\x15\n\risLiteVersion\x18\x02 \x01(\x08\x12\x11\n\tsignature\x18\x03 \x01(\x0c*4\n\x0bHash2Status\x12\x0b\n\x07INVALID\x10\x00\x12\r\n\tNOT_READY\x10\x01\x12\t\n\x05VALID\x10\x02\x32\xde\x02\n\x08\x45\x64geNode\x12=\n\x07\x45xecute\x12\x17.wedgeblock.Transaction\x1a\x19.wedgeblock.Hash1Response\x12I\n\x0c\x45xecuteBatch\x12\x1c.wedgeblock.TransactionBatch\x1a\x19.wedgeblock.Hash1Response0\x01\x12\x37\n\rGetPhase2Hash\x12\x13.wedgeblock.LogHash\x1a\x11.wedgeblock.Hash2\x12\x42\n\x0b\x41nswerQuery\x12\x16.wedgeblock.QueryBatch\x1a\x19.wedgeblock.Hash1Response0\x01\x12K\n\x12\x41nswerFullLogAudit\x12\x18.wedgeblock.AuditRequest\x1a\x19.wedgeblock.Hash1Response0\x01\x62\x06proto3'
 )
 
 _HASH2STATUS = _descriptor.EnumDescriptor(
@@ -48,8 +48,8 @@ _HASH2STATUS = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=722,
-  serialized_end=774,
+  serialized_start=768,
+  serialized_end=820,
 )
 _sym_db.RegisterEnumDescriptor(_HASH2STATUS)
 
@@ -392,13 +392,20 @@ _QUERYBATCH = _descriptor.Descriptor(
   fields=[
     _descriptor.FieldDescriptor(
       name='keys', full_name='wedgeblock.QueryBatch.keys', index=0,
-      number=2, type=12, cpp_type=9, label=3,
+      number=1, type=12, cpp_type=9, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='signature', full_name='wedgeblock.QueryBatch.signature', index=1,
+      name='isLiteVersion', full_name='wedgeblock.QueryBatch.isLiteVersion', index=1,
+      number=2, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='signature', full_name='wedgeblock.QueryBatch.signature', index=2,
       number=3, type=12, cpp_type=9, label=1,
       has_default_value=False, default_value=b"",
       message_type=None, enum_type=None, containing_type=None,
@@ -417,7 +424,7 @@ _QUERYBATCH = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=620,
-  serialized_end=665,
+  serialized_end=688,
 )
 
 
@@ -437,8 +444,15 @@ _AUDITREQUEST = _descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='signature', full_name='wedgeblock.AuditRequest.signature', index=1,
-      number=2, type=12, cpp_type=9, label=1,
+      name='isLiteVersion', full_name='wedgeblock.AuditRequest.isLiteVersion', index=1,
+      number=2, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='signature', full_name='wedgeblock.AuditRequest.signature', index=2,
+      number=3, type=12, cpp_type=9, label=1,
       has_default_value=False, default_value=b"",
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -455,8 +469,8 @@ _AUDITREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=667,
-  serialized_end=720,
+  serialized_start=690,
+  serialized_end=766,
 )
 
 _TRANSACTIONBATCH.fields_by_name['content'].message_type = _TRANSACTION
@@ -547,8 +561,8 @@ _EDGENODE = _descriptor.ServiceDescriptor(
   index=0,
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_start=777,
-  serialized_end=1127,
+  serialized_start=823,
+  serialized_end=1173,
   methods=[
   _descriptor.MethodDescriptor(
     name='Execute',

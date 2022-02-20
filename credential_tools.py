@@ -53,15 +53,19 @@ def verify_eth_msg_sig(index: int, merkle_root: bytes, merkle_path: [bytes],
     return signer_pub_key == PUBLIC_KEY
 
 
-def verify_hash1_response(hash1_response: wb.Hash1Response, original_transaction=None):
+def verify_hash1_response(hash1_response: wb.Hash1Response, original_transaction=None, is_lite_version=False):
     # verify the signature is correct
     sig_verify_start = time.perf_counter()
     # verify eth msg signature is correct
     hash1 = hash1_response.h1
-    eth_msg_verified = verify_eth_msg_sig(hash1.logIndex, hash1.merkleRoot,
-                                          hash1.merkleProofPath, hash1.merkleProofDir,
-                                          hash1.rawTxnStr,
-                                          hash1_response.ethMsgSignature)
+    if is_lite_version:
+        eth_msg_verified = verify_eth_msg_sig_lite(hash1.logIndex, hash1.merkleRoot,
+                                                   hash1_response.ethMsgSignature)
+    else:
+        eth_msg_verified = verify_eth_msg_sig(hash1.logIndex, hash1.merkleRoot,
+                                              hash1.merkleProofPath, hash1.merkleProofDir,
+                                              hash1.rawTxnStr,
+                                              hash1_response.ethMsgSignature)
     if not eth_msg_verified:
         return False, 0, 0
 
@@ -84,3 +88,19 @@ def verify_hash1_response(hash1_response: wb.Hash1Response, original_transaction
     tree_inclusion_verify_time = time.perf_counter() - tree_inclusion_verify_start
 
     return True, sig_verify_time, tree_inclusion_verify_time
+
+
+def sign_eth_msg_lite(index: int, merkle_root: bytes):
+    # only signing on index and merkle_root. A lite version.
+    message_hash = w3.solidityKeccak(['uint256', 'bytes'], [index, merkle_root])
+    message_hash = encode_defunct(primitive=message_hash)
+    signed_message = w3.eth.account.sign_message(message_hash, private_key=PRIVATE_KEY)
+    return signed_message.signature
+
+
+def verify_eth_msg_sig_lite(index:int, merkle_root:bytes, sig:bytes):
+    # only signing on index and merkle_root. A lite version.
+    message_hash = w3.solidityKeccak(['uint256', 'bytes'], [index, merkle_root])
+    message_hash = encode_defunct(primitive=message_hash)
+    signer = w3.eth.account.recover_message(message_hash, signature=sig)
+    return signer == PUBLIC_KEY

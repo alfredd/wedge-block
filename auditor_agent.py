@@ -20,7 +20,7 @@ class AuditorAgent:
         self.stub = None
         self.keccak_test_contract = keccakTestContract()
 
-    def send_query(self, query_size):
+    def send_query(self, query_size, is_lite_version=False):
         pool = mp.get_context('spawn').Pool(mp.cpu_count())
 
         keys = []
@@ -32,7 +32,7 @@ class AuditorAgent:
 
         query_content_hash = SHA256.new(str(keys).encode())
         query_signature = signer.sign(query_content_hash)
-        request = wb.QueryBatch(keys=keys, signature=query_signature)
+        request = wb.QueryBatch(keys=keys, isLiteVersion=is_lite_version, signature=query_signature)
 
         request_sent_t = time.perf_counter()
 
@@ -48,7 +48,9 @@ class AuditorAgent:
         for hash1_response in all_hash1_response:
             if hash1_response is None:
                 continue
-            result_objects.append(pool.apply_async(verify_hash1_response, args=(hash1_response,)))
+            result_objects.append(pool.apply_async(verify_hash1_response,
+                                                   args=(hash1_response,),
+                                                   kwds={'is_lite_version': is_lite_version}))
 
         verification_results = [r.get() for r in result_objects]
         pool.close()
@@ -84,12 +86,12 @@ class AuditorAgent:
         print("Throughput: (queries per sec)",
               round(total_txn_count / (end_t - request_sent_t), 4))
 
-    def send_audit_request(self, log_indexes):
+    def send_audit_request(self, log_indexes, is_lite_version=False):
         pool = mp.get_context('spawn').Pool(mp.cpu_count())
 
         query_content_hash = SHA256.new(str(log_indexes).encode())
         query_signature = signer.sign(query_content_hash)
-        request = wb.AuditRequest(logIndexes=log_indexes, signature=query_signature)
+        request = wb.AuditRequest(logIndexes=log_indexes, isLiteVersion=is_lite_version, signature=query_signature)
 
         request_sent_t = time.perf_counter()
 
@@ -105,7 +107,9 @@ class AuditorAgent:
         for hash1_response in all_hash1_response:
             if hash1_response is None:
                 continue
-            result_objects.append(pool.apply_async(verify_hash1_response, args=(hash1_response,)))
+            result_objects.append(pool.apply_async(verify_hash1_response,
+                                                   args=(hash1_response,),
+                                                   kwds={'is_lite_version': is_lite_version}))
 
         verification_results = [r.get() for r in result_objects]
         pool.close()
@@ -159,8 +163,8 @@ class AuditorAgent:
 
 
 
-        # log_indexes_to_query = list(range(10))
-        # self.send_audit_request(log_indexes_to_query)
+        log_indexes_to_query = list(range(10))
+        self.send_audit_request(log_indexes_to_query, is_lite_version=False)
 
-        query_size = 3000
-        self.send_query(query_size)
+        # query_size = 3000
+        # self.send_query(query_size, is_lite_version=True)

@@ -62,11 +62,13 @@ enum Hash2Status {
 }
 
 message QueryBatch {
-    repeated bytes keys = 2;
+    repeated bytes keys = 1;
+    bool isLiteVersion = 2;
     bytes signature = 3;
 }
 
 message AuditRequest {
     repeated int32 logIndexes = 1;
-    bytes signature = 2;
+    bool isLiteVersion = 2;
+    bytes signature = 3;
 }

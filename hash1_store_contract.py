@@ -39,10 +39,10 @@ class Hash1StoreContract:
 
     def getTransactionReceipt(self, txn_hash):
         try:
-            response = web3.eth.wait_for_transaction_receipt(
-                web3=self.w3, txn_hash=txn_hash, timeout=60, poll_latency=10)
+            response = self.w3.eth.wait_for_transaction_receipt(txn_hash)
             return response
-        except:
+        except Exception as e:
+            print(e)
             return None
 
 
