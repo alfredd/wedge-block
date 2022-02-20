@@ -1,7 +1,6 @@
 import wedgeblock_pb2 as wb
 
 from merklelib import MerkleTree
-import hashlib
 import pickle
 import threading
 import time

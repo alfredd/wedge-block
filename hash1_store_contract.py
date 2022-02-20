@@ -1,7 +1,6 @@
 from web3 import Web3, HTTPProvider
 import web3
 import json
-from Crypto.Hash import keccak
 import string
 from merklelib import MerkleTree
 from credential_tools import keccak_hash_func

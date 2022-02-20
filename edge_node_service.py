@@ -12,7 +12,7 @@ from Crypto.Hash import SHA256
 
 import multiprocessing as mp
 
-from credential_tools import signer, verifier, sign_eth_msg
+from credential_tools import verifier, sign_eth_msg
 
 
 def verify_sig(raw_bytes, signature):
@@ -31,7 +31,7 @@ def sign_response(h1: wb.Hash1):
     if h1 is None:
         return None
     eth_msg_signature = sign_eth_msg(h1.logIndex, h1.merkleRoot, h1.merkleProofPath, h1.merkleProofDir, h1.rawTxnStr)
-    return wb.Hash1Response(h1=h1, ethMsgSignature= eth_msg_signature)
+    return wb.Hash1Response(h1=h1, ethMsgSignature=eth_msg_signature)
 
 
 class EdgeService(wbgrpc.EdgeNodeServicer):
@@ -51,7 +51,6 @@ class EdgeService(wbgrpc.EdgeNodeServicer):
         # pool.join()
 
         return signed_hash1_list
-
 
     def Execute(self, request: wb.Transaction, context):
         raise NotImplementedError

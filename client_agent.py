@@ -66,7 +66,6 @@ class ClientAgent:
         print("workload generated using: ", round(request_generated_t - start_t, 4))
 
         received_unique_hash1 = dict()
-
         result_objects = []
         # send #batch_size many transactions to the edge node
         request_sent_t = time.perf_counter()
