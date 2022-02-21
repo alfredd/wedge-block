@@ -19,6 +19,7 @@ class AuditorAgent:
     def __init__(self):
         self.stub = None
         self.keccak_test_contract = keccakTestContract()
+        self.total_key_number_at_edge = 0
 
     def send_query(self, query_size, is_lite_version=False):
         pool = mp.get_context('spawn').Pool(mp.cpu_count())
@@ -26,8 +27,7 @@ class AuditorAgent:
         keys = []
         # This must be consistent with how many keys are stored at edge
         # BAD hard-coding just for experiment purposes.
-        total_key_number_at_edge = 10000
-        for i in random.sample(range(total_key_number_at_edge), query_size):
+        for i in random.sample(range(self.total_key_number_at_edge), query_size):
             keys.append(i.to_bytes(64, 'big'))
 
         query_content_hash = SHA256.new(str(keys).encode())
@@ -70,11 +70,13 @@ class AuditorAgent:
 
         end_t = time.perf_counter()
         total_txn_count = query_size
-
+        
+        '''
         print("Avg time (per txn) on signature verification: ",
               round(total_sig_verify_t / total_txn_count, 4))
         print("Avg time (per txn) on merkle proof verification: ",
               round(total_tree_inclusion_verify_t / total_txn_count, 4))
+        '''
 
         print("Total reading latency (sent out queries -> all responses read): ",
               round(after_read_before_verify_t - request_sent_t, 4))
@@ -129,11 +131,13 @@ class AuditorAgent:
         end_t = time.perf_counter()
         total_txn_count = len(verification_results)
 
+        '''
         print("Avg time (per txn) on signature verification: ",
               round(total_sig_verify_t / total_txn_count, 4))
         print("Avg time (per txn) on merkle proof verification: ",
               round(total_tree_inclusion_verify_t / total_txn_count, 4))
-
+        '''
+        
         print("Total reading latency (sent out queries -> all responses read): ",
               round(after_read_before_verify_t - request_sent_t, 4))
         print("Total verifying latency (all responses read -> all verified): ",
@@ -160,11 +164,15 @@ class AuditorAgent:
 
     def run(self, stub: wbgrpc.EdgeNodeStub):
         self.stub = stub
-
-
-
-        log_indexes_to_query = list(range(10))
-        self.send_audit_request(log_indexes_to_query, is_lite_version=False)
-
-        # query_size = 3000
-        # self.send_query(query_size, is_lite_version=True)
+        self.total_key_number_at_edge = 100 * 10000
+        
+        for full_audit in [False, True]:
+            for using_lite_version in [False, True]:
+                print("full_audit: ", full_audit, "lite_version: ", using_lite_version)
+                if full_audit:
+                    log_indexes_to_query = list(range(20))
+                    self.send_audit_request(log_indexes_to_query, is_lite_version=using_lite_version)
+                else:
+                    query_size = 50000
+                    self.send_query(query_size, is_lite_version=using_lite_version)
+                print()

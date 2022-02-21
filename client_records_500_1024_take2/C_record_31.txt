@@ -1,0 +1,8 @@
+workload generated using:  2.8306
+First txn/response RTT (sent out -> received):  2.8481
+Last  txn/response RTT (sent out -> received):  8.021
+Avg time (per txn) on signature verification:  0.0174
+Avg time (per txn) on merkle proof verification:  0.001
+Total phase1 latency (all sent out -> all verified):  8.8456
+Phase1 Throughput:  1130.5094
+Total phase2 latency (all hash2 verified):  32.8886

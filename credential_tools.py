@@ -70,6 +70,14 @@ def verify_hash1_response(hash1_response: wb.Hash1Response, original_transaction
         return False, 0, 0
 
     sig_verify_time = time.perf_counter() - sig_verify_start
+    
+    if not is_lite_version and original_transaction is None:
+        # if 1. auditor is verifying (not client) (original_transaction is None)
+        #    2. currently using non-lite version signature (signature on entire hash1)
+        # then verifying merkle proof is not necessary
+        # because incorrect merkle proof can be used to invoke punishment contract
+        # therefore can assume that edge will give a correct merkle proof
+        return True, sig_verify_time, 0
 
     # verify the merkle proof is correct
     tree_inclusion_verify_start = time.perf_counter()
