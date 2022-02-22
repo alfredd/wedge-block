@@ -1,0 +1,73 @@
+{
+		"abi": [
+			{
+				"inputs": [],
+				"stateMutability": "nonpayable",
+				"type": "constructor"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes",
+						"name": "key",
+						"type": "bytes"
+					}
+				],
+				"name": "getData",
+				"outputs": [
+					{
+						"components": [
+							{
+								"internalType": "bytes",
+								"name": "value",
+								"type": "bytes"
+							},
+							{
+								"internalType": "uint256",
+								"name": "sequenceNumber",
+								"type": "uint256"
+							}
+						],
+						"internalType": "struct baseCase.ValSeqTuple",
+						"name": "",
+						"type": "tuple"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes[]",
+						"name": "keys",
+						"type": "bytes[]"
+					},
+					{
+						"internalType": "bytes[]",
+						"name": "values",
+						"type": "bytes[]"
+					},
+					{
+						"internalType": "uint256[]",
+						"name": "sequenceNumbers",
+						"type": "uint256[]"
+					}
+				],
+				"name": "update",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"kind": "dev",
+			"methods": {},
+			"version": 1
+		},
+		"userdoc": {
+			"kind": "user",
+			"methods": {},
+			"version": 1
+		}
+	}

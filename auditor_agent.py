@@ -19,16 +19,9 @@ class AuditorAgent:
     def __init__(self):
         self.stub = None
         self.keccak_test_contract = keccakTestContract()
-        self.total_key_number_at_edge = 0
 
-    def send_query(self, query_size, is_lite_version=False):
+    def send_query(self, query_size, is_lite_version=False, keys:[bytes]):
         pool = mp.get_context('spawn').Pool(mp.cpu_count())
-
-        keys = []
-        # This must be consistent with how many keys are stored at edge
-        # BAD hard-coding just for experiment purposes.
-        for i in random.sample(range(self.total_key_number_at_edge), query_size):
-            keys.append(i.to_bytes(64, 'big'))
 
         query_content_hash = SHA256.new(str(keys).encode())
         query_signature = signer.sign(query_content_hash)
@@ -164,7 +157,14 @@ class AuditorAgent:
 
     def run(self, stub: wbgrpc.EdgeNodeStub):
         self.stub = stub
-        self.total_key_number_at_edge = 100 * 10000
+        total_key_number_at_edge = 100 * 10000
+        query_size = 50000
+
+        keys = []
+        # This must be consistent with how many keys are stored at edge
+        # BAD hard-coding just for experiment purposes.
+        for i in random.sample(range(total_key_number_at_edge), query_size):
+            keys.append(i.to_bytes(64, 'big'))
         
         for full_audit in [False, True]:
             for using_lite_version in [False, True]:
@@ -173,6 +173,6 @@ class AuditorAgent:
                     log_indexes_to_query = list(range(20))
                     self.send_audit_request(log_indexes_to_query, is_lite_version=using_lite_version)
                 else:
-                    query_size = 50000
-                    self.send_query(query_size, is_lite_version=using_lite_version)
+
+                    self.send_query(query_size, is_lite_version=using_lite_version, keys=keys)
                 print()

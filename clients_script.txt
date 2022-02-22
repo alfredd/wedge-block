@@ -3,14 +3,15 @@
 folder="client_records_2000_4096"
 n_clients=100
 
-rm ${folder}/*
+# rm ${folder}/*
 
 for ((i=0; i<${n_clients}; i++));
 do 
 	echo running client Num "$i"
-	python3 client.py $i > "${folder}/C_record_${i}.txt" &
+	# python3 client.py $i > "${folder}/C_record_${i}.txt" &
+	python3 client.py $i > /dev/null &
 	pids[$i]=$!
-	sleep 19
+	sleep 10
 done
 
 for pid in ${pids[*]}

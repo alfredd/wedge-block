@@ -29,7 +29,7 @@ class ClientAgent:
         self.hash2_checking_interval = 3
         self.batch_size = 10000
         self.txn_key_size = 64
-        self.txn_val_size = 4096
+        self.txn_val_size = 1024
 
     def _check_hash2(self, hash1: wb.Hash1):
         log_hash = wb.LogHash(logIndex=hash1.logIndex, merkleRoot=hash1.merkleRoot)
