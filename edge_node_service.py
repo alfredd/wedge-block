@@ -138,7 +138,13 @@ class EdgeService(wbgrpc.EdgeNodeServicer):
         return wb.Hash2(status=wb.Hash2Status.NOT_READY)
 
     def AnswerQuery(self, query: wb.QueryBatch, context):
+        print("Query request of {} keys received.",format(len(query.keys)))
+        start_t = time.perf_counter()
+
         h1_result = self.edge_node.answer_query(query.keys)
+
+        before_sign_t = time.perf_counter()
+        print("Query results ready after {} sec.".format(before_sign_t - start_t))
 
         # pool = mp.Pool(mp.cpu_count())
         pool = mp.get_context('spawn').Pool(mp.cpu_count())
@@ -149,11 +155,22 @@ class EdgeService(wbgrpc.EdgeNodeServicer):
         pool.close()
         pool.join()
 
+        after_sign_t = time.perf_counter()
+        print("Query results signed after {} sec. Lite-version: {}."
+              .format(after_sign_t-before_sign_t, query.isLiteVersion))
+
         for response in batch_response:
             yield response
 
     def AnswerFullLogAudit(self, audit_request: wb.AuditRequest, context):
+        print("Log Audit request of {} logs received.", format(len(audit_request.logIndexes)))
+        start_t = time.perf_counter()
+
         h1_result = self.edge_node.answer_full_log_query(audit_request.logIndexes)
+
+        before_sign_t = time.perf_counter()
+        print("Log Audit results ready after {} sec.".format(before_sign_t - start_t))
+
         # pool = mp.Pool(mp.cpu_count())
         pool = mp.get_context('spawn').Pool(mp.cpu_count())
         if audit_request.isLiteVersion:
@@ -162,6 +179,11 @@ class EdgeService(wbgrpc.EdgeNodeServicer):
             batch_response = self._sign_hash1_list(h1_result, pool, sign_response)
         pool.close()
         pool.join()
+
+        after_sign_t = time.perf_counter()
+        print("Log Audit results signed after {} sec. Lite-version: {}."
+              .format(after_sign_t - before_sign_t, audit_request.isLiteVersion))
+
         for response in batch_response:
             yield response
 
