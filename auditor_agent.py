@@ -20,7 +20,7 @@ class AuditorAgent:
         self.stub = None
         self.keccak_test_contract = keccakTestContract()
 
-    def send_query(self, query_size, is_lite_version=False, keys:[bytes]):
+    def send_query(self, query_size, is_lite_version=False, keys=[]):
         pool = mp.get_context('spawn').Pool(mp.cpu_count())
 
         query_content_hash = SHA256.new(str(keys).encode())
@@ -165,6 +165,9 @@ class AuditorAgent:
         # BAD hard-coding just for experiment purposes.
         for i in random.sample(range(total_key_number_at_edge), query_size):
             keys.append(i.to_bytes(64, 'big'))
+
+        # warm up
+        self.send_query(query_size, is_lite_version=using_lite_version, keys=keys)
         
         for full_audit in [False, True]:
             for using_lite_version in [False, True]:
@@ -173,6 +176,5 @@ class AuditorAgent:
                     log_indexes_to_query = list(range(20))
                     self.send_audit_request(log_indexes_to_query, is_lite_version=using_lite_version)
                 else:
-
                     self.send_query(query_size, is_lite_version=using_lite_version, keys=keys)
                 print()
