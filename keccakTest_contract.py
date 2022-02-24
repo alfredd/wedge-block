@@ -4,6 +4,7 @@ import web3
 import json
 from eth_account.messages import encode_defunct
 import eth_abi
+import time
 
 
 class keccakTestContract:
@@ -64,18 +65,32 @@ if __name__ == '__main__':
 
     expected_sig = b'\xc9\xe0p\x84\x9f\xba\x03\r\x0b*\xfb\x0b\xb1F^\xeau\x08\x97\xe1\xcf\xe8;\x05\x1387/\xb4\x134#,vM\x89\xa8Z\x86\x8e~\x1fN\xae\xca\xbc\xb4[\xbfO\x7f.\xec\xb3\xe5S\x08(\n\xbam\x9d\x8e\xa6\x1c'
 
-
+    a = time.perf_counter()
     abiEncoded = eth_abi.encode_abi(['uint256', 'bytes', 'bytes[]', 'uint256[]', 'string'],
                                     [index, merkle_root, merkle_path, merkle_path_dir, raw_txn_str])
+    b = time.perf_counter()
+    print("a -> b: ", b-a)
     message_hash = w3.solidityKeccak(['bytes'], ['0x' + abiEncoded.hex()])
 
     # message_hash = Web3.solidityKeccak(['uint256', 'bytes', 'bytes[]', 'uint256[]', 'string'],
     #                                    [index, merkle_root, merkle_path, merkle_path_dir, raw_txn_str])
-
-    message_hash = encode_defunct(primitive=message_hash)
-    signed_message = w3.eth.account.sign_message(message_hash, private_key=PRIVATE_KEY)
+    c = time.perf_counter()
+    print("b -> c: ", c-b)
+    encoded_message_hash = encode_defunct(primitive=message_hash)
+    d = time.perf_counter()
+    print("c -> d: ", d-c)
+    # sign_message takes the most of the time in the whole process
+    signed_message = w3.eth.account.sign_message(encoded_message_hash, private_key=PRIVATE_KEY)
+    e = time.perf_counter()
+    print("d -> e: ", e - d)
 
     print(signed_message.signature)
 
-    result = punishment_contract.invokePunishment(index, merkle_root, merkle_path, merkle_path_dir, raw_txn_str, signed_message.signature)
-    print(result.hex())
+    signer_pub_key = w3.eth.account.recover_message(encoded_message_hash, signature=signed_message.signature)
+
+    f = time.perf_counter()
+    print("e -> f: ", f-e)
+    print(signer_pub_key == PUBLIC_KEY)
+
+    # result = punishment_contract.invokePunishment(index, merkle_root, merkle_path, merkle_path_dir, raw_txn_str, signed_message.signature)
+    # print(result.hex())

@@ -27,7 +27,7 @@ class ClientAgent:
         self.bc_block_validator = BlockValidator()
         self.id = client_id
         self.hash2_checking_interval = 3
-        self.batch_size = 10000
+        self.batch_size = 1  # 10000
         self.txn_key_size = 64
         self.txn_val_size = 1024
 
@@ -87,24 +87,15 @@ class ClientAgent:
         pool.close()
         pool.join()
 
-        # check if all verification passed and accumulate performance measurements
-        total_sig_verify_t = 0
-        total_tree_inclusion_verify_t = 0
-        for v_result in verification_results:
-            try:
-                assert v_result[0]
-            except AssertionError:
+        # check if all verification passed
+        for i in range(len(verification_results)):
+            if not verification_results[i]:
                 print("Verification Failed")
-            total_sig_verify_t += v_result[1]
-            total_tree_inclusion_verify_t += v_result[2]
 
         end_t = time.perf_counter()
 
         print("First txn/response RTT (sent out -> received): ", round(first_response_received_t - request_sent_t, 4))
         print("Last  txn/response RTT (sent out -> received): ", round(last_response_received_t - request_sent_t, 4))
-
-        print("Avg time (per txn) on signature verification: ", round(total_sig_verify_t / batch_size, 4))
-        print("Avg time (per txn) on merkle proof verification: ", round(total_tree_inclusion_verify_t / batch_size, 4))
 
         print("Total phase1 latency (all sent out -> all verified): ", round(end_t - request_sent_t, 4))
         print("Phase1 Throughput: ", round(batch_size/(end_t - request_sent_t), 4))

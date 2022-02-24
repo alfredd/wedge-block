@@ -12,7 +12,7 @@ from Crypto.Hash import SHA256
 
 import multiprocessing as mp
 
-from credential_tools import verifier, sign_eth_msg, sign_eth_msg_lite
+from credential_tools import verifier, sign_eth_msg
 
 
 def verify_sig(raw_bytes, signature):
@@ -31,13 +31,6 @@ def sign_response(h1: wb.Hash1):
     if h1 is None:
         return None
     eth_msg_signature = sign_eth_msg(h1.logIndex, h1.merkleRoot, h1.merkleProofPath, h1.merkleProofDir, h1.rawTxnStr)
-    return wb.Hash1Response(h1=h1, ethMsgSignature=eth_msg_signature)
-
-
-def sign_lite_response(h1: wb.Hash1):
-    if h1 is None:
-        return None
-    eth_msg_signature = sign_eth_msg_lite(h1.logIndex, h1.merkleRoot)
     return wb.Hash1Response(h1=h1, ethMsgSignature=eth_msg_signature)
 
 
@@ -148,16 +141,12 @@ class EdgeService(wbgrpc.EdgeNodeServicer):
 
         # pool = mp.Pool(mp.cpu_count())
         pool = mp.get_context('spawn').Pool(mp.cpu_count())
-        if query.isLiteVersion:
-            batch_response = self._sign_hash1_list(h1_result, pool, sign_lite_response)
-        else:
-            batch_response = self._sign_hash1_list(h1_result, pool, sign_response)
+        batch_response = self._sign_hash1_list(h1_result, pool, sign_response)
         pool.close()
         pool.join()
 
         after_sign_t = time.perf_counter()
-        print("Query results signed after {} sec. Lite-version: {}."
-              .format(after_sign_t-before_sign_t, query.isLiteVersion))
+        print("Query results signed after {} sec.".format(after_sign_t-before_sign_t))
 
         for response in batch_response:
             yield response
@@ -173,16 +162,12 @@ class EdgeService(wbgrpc.EdgeNodeServicer):
 
         # pool = mp.Pool(mp.cpu_count())
         pool = mp.get_context('spawn').Pool(mp.cpu_count())
-        if audit_request.isLiteVersion:
-            batch_response = self._sign_hash1_list(h1_result, pool, sign_lite_response)
-        else:
-            batch_response = self._sign_hash1_list(h1_result, pool, sign_response)
+        batch_response = self._sign_hash1_list(h1_result, pool, sign_response)
         pool.close()
         pool.join()
 
         after_sign_t = time.perf_counter()
-        print("Log Audit results signed after {} sec. Lite-version: {}."
-              .format(after_sign_t - before_sign_t, audit_request.isLiteVersion))
+        print("Log Audit results signed after {} sec.".format(after_sign_t - before_sign_t))
 
         for response in batch_response:
             yield response
